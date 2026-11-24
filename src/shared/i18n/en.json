@@ -1,0 +1,20 @@
+{
+  "app": {
+    "title": "Job offers",
+    "navigation": {
+      "job-offers": "Job offers",
+      "settings": "Settings"
+    },
+    "language": "Language",
+    "error": {
+      "title": "Something went wrong",
+      "retry": "Try again"
+    },
+    "not-found": "This page does not exist."
+  },
+  "job-offers": {
+    "list": {
+      "title": "Job offers"
+    }
+  }
+}

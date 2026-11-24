@@ -4,19 +4,19 @@ A React 19 + MUI app to manage job offers through a per-company workflow, agains
 
 ## Stack
 
-| Need                   | Choice                                           | Why                                                                                    |
-| ---------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| Build                  | Vite + TypeScript (strict)                       | Fast dev server, no framework the brief does not need                                  |
-| UI                     | MUI                                              | Imposed by the brief                                                                   |
-| Routing                | TanStack Router                                  | Typed routes and search params: filters, sort and page live in the URL, validated      |
-| Server state           | TanStack Query                                   | Cache, loading and error states, invalidation after a write                            |
-| API client             | `openapi-typescript` + `openapi-fetch`           | Types generated from the swagger; a dozen hooks written by hand stay readable          |
-| Forms                  | react-hook-form + zod                            | Uncontrolled inputs, one schema for types and validation                               |
-| Form flow              | XState v5                                        | Steps, saving and failures as explicit states: an impossible combination cannot exist |
-| Mock API               | MSW                                              | The same handlers serve the browser and the tests                                      |
-| i18n                   | react-i18next                                    | French and English, switchable at runtime                                              |
-| Tests                  | Vitest + Testing Library + MSW                   | Same config as Vite; screens tested against the real handlers                          |
-| Lint and format        | oxlint + oxfmt                                   | Fast, one config each                                                                  |
+| Need            | Choice                                 | Why                                                                                   |
+| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| Build           | Vite + TypeScript (strict)             | Fast dev server, no framework the brief does not need                                 |
+| UI              | MUI                                    | Imposed by the brief                                                                  |
+| Routing         | TanStack Router                        | Typed routes and search params: filters, sort and page live in the URL, validated     |
+| Server state    | TanStack Query                         | Cache, loading and error states, invalidation after a write                           |
+| API client      | `openapi-typescript` + `openapi-fetch` | Types generated from the swagger; a dozen hooks written by hand stay readable         |
+| Forms           | react-hook-form + zod                  | Uncontrolled inputs, one schema for types and validation                              |
+| Form flow       | XState v5                              | Steps, saving and failures as explicit states: an impossible combination cannot exist |
+| Mock API        | MSW                                    | The same handlers serve the browser and the tests                                     |
+| i18n            | react-i18next                          | French and English, switchable at runtime                                             |
+| Tests           | Vitest + Testing Library + MSW         | Same config as Vite; screens tested against the real handlers                         |
+| Lint and format | oxlint + oxfmt                         | Fast, one config each                                                                 |
 
 No global store: the URL holds the UI state that must survive a reload or a shared link, Query holds the server state, and a component holds the rest.
 
@@ -74,15 +74,15 @@ The create and edit screens share `JobOfferForm`: three steps (basic information
 
 Each piece of state has one owner; nothing is copied into a `useState`.
 
-| State                                           | Owner                                                                |
-| ----------------------------------------------- | -------------------------------------------------------------------- |
-| The flow: step, validating, saving, failure     | `jobOfferFormMachine`                                                |
-| Values and field errors                         | react-hook-form (`shouldUnregister: false` keeps a hidden step's values) |
-| The request and the cache invalidation          | The mutation, invoked by the machine                                 |
-| The company's configuration                     | Query, loaded by the screen and given to the machine as input        |
-| Create or edit                                  | Props: an `offer` means edit, and `defaultValues` come from `toJobOfferFormValues(offer)`; without one, empty values |
-| Leaving with unsaved changes                    | TanStack Router's `useBlocker`                                       |
-| An offer no longer editable                     | The edit route's loader, which sends it back to its detail           |
+| State                                       | Owner                                                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| The flow: step, validating, saving, failure | `jobOfferFormMachine`                                                                                                |
+| Values and field errors                     | react-hook-form (`shouldUnregister: false` keeps a hidden step's values)                                             |
+| The request and the cache invalidation      | The mutation, invoked by the machine                                                                                 |
+| The company's configuration                 | Query, loaded by the screen and given to the machine as input                                                        |
+| Create or edit                              | Props: an `offer` means edit, and `defaultValues` come from `toJobOfferFormValues(offer)`; without one, empty values |
+| Leaving with unsaved changes                | TanStack Router's `useBlocker`                                                                                       |
+| An offer no longer editable                 | The edit route's loader, which sends it back to its detail                                                           |
 
 ### The machine
 
@@ -136,11 +136,11 @@ MSW intercepts every call in the browser and in the tests; there is no backend t
 
 A behaviour is proved once, in the layer that owns it.
 
-| Layer                                  | Proves                                                                                    |
-| -------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Pure functions (schema, error mapping) | Each rule's boundaries, as plain functions                                                |
-| Form machine, through `createActor`    | Each transition and guard, with no DOM                                                    |
-| Mock store                             | The state machine under each configuration, since every screen test relies on it          |
+| Layer                                  | Proves                                                                                           |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Pure functions (schema, error mapping) | Each rule's boundaries, as plain functions                                                       |
+| Form machine, through `createActor`    | Each transition and guard, with no DOM                                                           |
+| Mock store                             | The state machine under each configuration, since every screen test relies on it                 |
 | Screens, through Testing Library + MSW | What a user does: filter the list, walk the form and its errors, run a transition, save settings |
 
 No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/`.
