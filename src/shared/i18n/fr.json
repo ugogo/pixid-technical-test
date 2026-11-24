@@ -1,0 +1,20 @@
+{
+  "app": {
+    "title": "Offres d'emploi",
+    "navigation": {
+      "job-offers": "Offres d'emploi",
+      "settings": "Paramètres"
+    },
+    "language": "Langue",
+    "error": {
+      "title": "Une erreur est survenue",
+      "retry": "Réessayer"
+    },
+    "not-found": "Cette page n'existe pas."
+  },
+  "job-offers": {
+    "list": {
+      "title": "Offres d'emploi"
+    }
+  }
+}
