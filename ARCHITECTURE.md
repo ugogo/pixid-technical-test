@@ -2,27 +2,29 @@
 
 A React 19 + MUI app to manage job offers through a per-company workflow, against a mocked API built from `job-offer-swagger.yml`.
 
+**Built so far**: the scaffold and the mock API. The sections marked _planned_ describe the target for the hooks, screens and form, and change as they land.
+
 ## Stack
 
-| Need            | Choice                                 | Why                                                                                   |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| Build           | Vite + TypeScript (strict)             | Fast dev server, no framework the brief does not need                                 |
-| UI              | MUI                                    | Imposed by the brief                                                                  |
-| Routing         | TanStack Router                        | Typed routes and search params: filters, sort and page live in the URL, validated     |
-| Server state    | TanStack Query                         | Cache, loading and error states, invalidation after a write                           |
-| API client      | `openapi-typescript` + `openapi-fetch` | Types generated from the swagger; a dozen hooks written by hand stay readable         |
-| Forms           | react-hook-form + zod                  | Uncontrolled inputs, one schema for types and validation                              |
-| Form flow       | XState v5                              | Steps, saving and failures as explicit states: an impossible combination cannot exist |
-| Mock API        | MSW                                    | The same handlers serve the browser and the tests                                     |
-| i18n            | react-i18next                          | French and English, switchable at runtime                                             |
-| Tests           | Vitest + Testing Library + MSW         | Same config as Vite; screens tested against the real handlers                         |
-| Lint and format | oxlint + oxfmt                         | Fast, one config each                                                                 |
+| Need            | Choice                                 | Why                                                                                                                                                                                     |
+| --------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build           | Vite + TypeScript (strict)             | Fast dev server, no framework the brief does not need                                                                                                                                   |
+| UI              | MUI                                    | Imposed by the brief                                                                                                                                                                    |
+| Routing         | TanStack Router                        | Typed routes and search params: filters, sort and page live in the URL, validated; routes are code-split                                                                                |
+| Server state    | TanStack Query                         | Cache, loading and error states, invalidation after a write                                                                                                                             |
+| API client      | `openapi-typescript` + `openapi-fetch` | Types generated from the swagger; a dozen hooks written by hand stay readable                                                                                                           |
+| Forms           | react-hook-form + zod                  | Mature MUI integration (`Controller`) and `setError` on nested paths, which the 422 mapping relies on. TanStack Form would match the suite; it is the first thing to try with more time |
+| Form flow       | XState v5                              | Steps, saving and failures as explicit states: an impossible combination cannot exist                                                                                                   |
+| Mock API        | MSW                                    | The same handlers serve the browser and the tests                                                                                                                                       |
+| i18n            | react-i18next                          | French and English, switchable at runtime                                                                                                                                               |
+| Tests           | Vitest + Testing Library + MSW         | Same config as Vite; screens tested against the real handlers                                                                                                                           |
+| Lint and format | oxlint + oxfmt                         | Fast, one config each; oxlint runs the React, jsx-a11y and Vitest plugins                                                                                                               |
 
 No global store: the URL holds the UI state that must survive a reload or a shared link, Query holds the server state, and a component holds the rest.
 
 ## Layers
 
-Imports go one way: `routes → screens → features → shared`. A layer never imports from one above it.
+`app/` and `routes/` form the shell; below them, imports go one way: `screens → features → shared`. A layer does not import from one above it. Nothing enforces this but review.
 
 ```
 src/
@@ -41,48 +43,66 @@ src/
 │   ├── api/                openapi-fetch client, generated types
 │   ├── ui/                 presentational pieces over MUI (page layout, skeletons)
 │   └── i18n/               setup, language switcher, `fr.json`, `en.json`
-└── mocks/                  MSW handlers, in-memory store, seed
+├── mocks/                  MSW: handlers, in-memory store, seed; only `main.tsx` and the tests import it
+└── test/                   test setup and render helpers
 ```
 
 - **A screen is named entity first, then its verb** (`job-offer-edit`, `job-offer-new`): an entity's screens sort together.
 - **A screen owns its page**: its layout, its copy, which blocks it shows. It holds no API call of its own.
 - **A feature exports blocks, never a page**: a screen imports `@/features/job-offers`, never a file inside it.
-- **`shared/` knows no domain**: nothing in it names a job offer.
+- **`shared/` holds no domain logic**: the generated API types and the translation files name job offers, but no component or function in it does.
 
-## Data
+## Data _(planned)_
 
-- **Query keys**: one `as const` factory per feature (`jobOfferKeys.all`, `jobOfferKeys.list(filters)`, `jobOfferKeys.detail(id)`, `jobOfferKeys.transitions(id)`); no key is written inline, so an invalidation cannot miss its query.
-- **Reads**: one Query hook per endpoint, keyed through the factory.
-- **Writes**: a mutation hook per endpoint. On success it invalidates what it touched: the offer, its transitions, its history and the list. Writes are not optimistic: the next status depends on the company's configuration, which only the server knows.
+- **Query keys**: one `as const` factory per feature, nested so one invalidation reaches everything below it. No key is written inline.
+
+  ```ts
+  jobOfferKeys.all; // ['job-offers']
+  jobOfferKeys.lists(); // ['job-offers', 'list']
+  jobOfferKeys.list(filters); // ['job-offers', 'list', filters]
+  jobOfferKeys.detail(id); // ['job-offers', 'detail', id]
+  jobOfferKeys.transitions(id); // ['job-offers', 'detail', id, 'transitions']
+  jobOfferKeys.history(id); // ['job-offers', 'detail', id, 'history']
+  companySettingsKeys.configuration(companyId);
+  ```
+
+- **Reads**: one Query hook per endpoint, keyed through the factory. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
+- **Writes**: a mutation hook per endpoint. A transition or an update invalidates `detail(id)` (the offer, its transitions and its history) and `lists()`. A delete removes `detail(id)` from the cache instead, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
+- **Not optimistic**: a write changes several queries at once (the offer, its transitions, its history, its place in the list) and the server can refuse it (409, 422). Waiting for the answer keeps the screen truthful for a delay of a few hundred milliseconds.
+- **Retries**: a query retries once on a network failure or a 5xx, never on a 4xx.
 - **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
 - **Types**: `pnpm api:types` regenerates `shared/api/schema.d.ts` from the swagger. Nothing else is hand-typed for the wire.
 
-## Workflow and transitions
+## Workflow and transitions _(planned)_
 
 The server decides which transitions exist; the UI never recomputes the state machine.
 
-- The detail screen reads `GET /job-offers/{id}/transitions`: each transition names its action, its target status and whether it needs a reason. The button's label follows the target ("Submit for approval" when the target is `TO_APPROVE`, "Publish" when it is `PUBLISHED`).
-- `reject` opens a dialog for its reason; `withdraw` and `close` ask for confirmation.
+- The detail screen reads `GET /job-offers/{id}/transitions`: each transition names its action, its target status and whether it needs a reason.
+- **Labels** are keyed on the action and its target, since an action can lead to different statuses: `submit` to `TO_APPROVE` is "Submit for approval", `submit` to `PUBLISHED` is "Publish". A key without a target (`transitions.withdraw`) covers an action that always lands in the same status.
+- **Reason**: a transition with `requiresReason` opens a dialog for it (today, `reject`).
+- **Confirmation**: `withdraw` and `close` ask before running. That list is a UI choice, not the server's.
+- **Completeness**: while `isComplete` is false, `finalize` is disabled, with a link to the edit screen.
 - Edit and Delete are not transitions. The UI shows them in the statuses the swagger allows (Edit in `DRAFT` and `TO_FINALIZE`, Delete in `DRAFT`); the server's 409 stays the authority.
-- A new workflow step (a new status or action) needs a label and a colour, no new branching.
 
-## Forms
+## Forms _(planned)_
 
-The create and edit screens share `JobOfferForm`: three steps (basic information, compensation, review) over one `useForm`, driven by one XState machine.
+The create and edit screens share `JobOfferForm`: three steps (basic information, compensation, review) over one `useForm`, driven by one XState machine. The form only saves; the workflow's actions run from the detail screen.
 
 ### Who holds what
 
 Each piece of state has one owner; nothing is copied into a `useState`.
 
-| State                                       | Owner                                                                                                                |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| The flow: step, validating, saving, failure | `jobOfferFormMachine`                                                                                                |
-| Values and field errors                     | react-hook-form (`shouldUnregister: false` keeps a hidden step's values)                                             |
-| The request and the cache invalidation      | The mutation, invoked by the machine                                                                                 |
-| The company's configuration                 | Query, loaded by the screen and given to the machine as input                                                        |
-| Create or edit                              | Props: an `offer` means edit, and `defaultValues` come from `toJobOfferFormValues(offer)`; without one, empty values |
-| Leaving with unsaved changes                | TanStack Router's `useBlocker`                                                                                       |
-| An offer no longer editable                 | The edit route's loader, which sends it back to its detail                                                           |
+| State                                       | Owner                                                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The flow: step, validating, saving, failure | `jobOfferFormMachine`                                                                                                                                   |
+| Values and field errors                     | react-hook-form; a hidden step's fields stay registered, so their values survive                                                                        |
+| The request and the cache invalidation      | The screen's mutation, passed to the form as an async `onSave`                                                                                          |
+| Whether saving early is offered             | On create, the company's `partialSaveEnabled`, read by the screen; on edit, always, since the offer's own workflow is not exposed (see the table below) |
+| Create or edit                              | Props: an `offer` means edit, and `defaultValues` come from `toJobOfferFormValues(offer)`; without one, empty values                                    |
+| Leaving with unsaved changes                | TanStack Router's `useBlocker`, while the form is dirty and the machine is not in `saved`                                                               |
+| An offer no longer editable                 | The edit route's loader, which sends it back to its detail                                                                                              |
+
+The component starts the machine with `machine.provide`: `validateStep` wraps react-hook-form's `trigger`, `save` wraps `onSave`. The machine knows neither react-hook-form nor the API.
 
 ### The machine
 
@@ -90,37 +110,47 @@ Each piece of state has one owner; nothing is copied into a `useState`.
 editing
  ├── basicInfo ──NEXT──▶ validating ──valid──▶ compensation ──NEXT──▶ validating ──valid──▶ review
  │      ◀──────────────────BACK─────────────────────┘      ◀────────────BACK──────────────┘
- ├── SAVE_DRAFT [partialSaveEnabled] ──▶ saving
- └── SUBMIT (from review) ─────────────▶ saving
+ ├── SAVE_EARLY [canSaveEarly] ──▶ validating (draft rules) ──valid──▶ saving
+ └── SAVE (from review) ─────────▶ validating (all rules) ────valid──▶ saving
 
 saving ──done──────▶ saved: navigate to the detail
-       ──422───────▶ editing.<step of the first field in error>, with setError
+       ──422───────▶ editing.basicInfo | editing.compensation, the first step holding an error
        ──409───────▶ conflict: a message and a link to the detail, no more input
        ──network───▶ editing.<same step>, with a message
 ```
 
-- **Validation is a state**: XState computes a transition synchronously, so a guard is a plain predicate (v5, and still `=> boolean` in the v6 beta). `validating` invokes react-hook-form's `trigger` on the step's fields as a promise actor instead.
+- **Validation is a state**: XState computes a transition synchronously, so a guard is a plain predicate. `validating` invokes `validateStep` as a promise actor instead.
 - **No double send**: `saving` accepts no event.
-- **Partial save**: the `partialSaveEnabled` guard offers "Save draft" at every step, against a schema that needs only title and location; otherwise only the review saves, against the full schema.
-- **A 422 on a hidden step**: `fieldErrors[].field` (`compensation.salaryEntries[0].amount`) becomes the form path, and the machine returns to the first step holding an error so the message is seen.
+- **A 422 picks its step** through one guarded transition per step, in step order, so the user lands where the first error is.
+- **A 422 without a field** to attach to (`compensation`, `location.address`) shows in an error slot at the top of its step.
+- **Server messages** show as the server words them, in English: the client validates the same rules first, so a 422 is rare.
 
 ### Schema and request
 
-- **Schema**: built from the swagger's constraints (title 1 to 200 chars, country `^[A-Z]{2}$`, currency `^[A-Z]{3}$`, amounts ≥ 0, address required when location is `CUSTOM`). A complete offer needs at least one salary or bonus entry.
+- **One schema**, built from the swagger's constraints (title 1 to 200 chars, country `^[A-Z]{2}$`, currency `^[A-Z]{3}$`, amounts ≥ 0, address required when location is `CUSTOM`). Saving early checks every field that is filled, salary rows included; it skips only the rule that a complete offer needs at least one salary or bonus entry.
 - **Location**: a union on `location.type`. Switching to `COMPANY_ADDRESS` keeps the typed address in the values, in case the user switches back; `toJobOfferRequest` drops it when sending.
 - **Validation mode**: `onTouched`, so no error shows before the user leaves a field.
+
+## List _(planned)_
+
+- **Search params mirror the API's query** (`page` from 0, `sort` as `-createdAt`), validated by the route, so nothing maps between the URL and the request.
+- **Title search** reaches the URL 300 ms after the last keystroke.
+- **Dates**: a "from" day becomes `createdAfter` at its start (inclusive); a "to" day becomes `createdBefore` at the start of the next day (exclusive), so the "to" day is included.
+- **A company address** has no city in the list (`locationCity` is `null`) and shows as "Company address".
 
 ## Mock API
 
 MSW intercepts every call in the browser and in the tests; there is no backend to run.
 
-| File            | Holds                                                                                |
-| --------------- | ------------------------------------------------------------------------------------ |
-| `workflow.ts`   | The state machine: the transitions a status allows under a workflow, as one function |
-| `validation.ts` | The swagger's field constraints, reported under its JSON paths                       |
-| `store.ts`      | Offers, history and configurations in memory, and the rules that change them         |
-| `seed.ts`       | 30 offers for the current company, 2 for another one                                 |
-| `handlers.ts`   | The HTTP layer: query parsing, the company header, the delay, errors as responses    |
+| File                    | Holds                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `workflow.ts`           | The state machine: the transitions a status allows under a workflow, as one function |
+| `validation.ts`         | The swagger's field constraints, reported under its JSON paths                       |
+| `store.ts`              | Offers, history and configurations in memory, and the rules that change them         |
+| `api-error.ts`          | The refusals the store throws, as an HTTP status and the swagger's error body        |
+| `seed.ts`               | 30 offers for the current company, 2 for another one                                 |
+| `handlers.ts`           | The HTTP layer: query parsing, the company header, the delay, errors as responses    |
+| `browser.ts`, `node.ts` | The worker for the browser, the server for the tests                                 |
 
 - Each offer keeps the workflow configuration it was created with: a configuration change applies to new offers only, as the swagger states.
 - Every response waits MSW's realistic `delay()` (100 to 400 ms in the browser, a few ms under Node), so skeletons and pending states show.
@@ -129,30 +159,31 @@ MSW intercepts every call in the browser and in the tests; there is no backend t
 
 ### Swagger ambiguities and how the mock resolves them
 
-The swagger is the only specification, and on a few points it is silent or contradicts itself: `withdraw` leaves "any active state" without saying which states are active, and the create endpoint puts an incomplete offer in `TO_FINALIZE` while `submit` also leads there from `DRAFT`. A mock must answer one way, so each point below records the reading it takes; a real backend may decide otherwise, and the UI follows what the API returns either way.
+The swagger leaves some behaviours unstated. A mock must answer one way, so the table records each reading; a real backend may differ, and the UI follows what the API returns.
 
-| Ambiguity                                | Resolution                                                                                                                                                                                                                     |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| What a complete offer needs              | A title and a location are required by every request, so only compensation can be missing: at least one salary or bonus entry                                                                                                  |
-| Where an incomplete offer starts         | With partial save, in `TO_FINALIZE` (the create endpoint says so); a complete offer starts in `DRAFT`. An incomplete draft (after a withdraw) is submitted to `TO_FINALIZE`. Without partial save, an incomplete body is a 422 |
-| Whether an incomplete offer lists submit | Yes: `submit` or `finalize` stays listed and answers `INCOMPLETE_OFFER`, so the UI can say what is missing                                                                                                                     |
-| Which states `withdraw` leaves           | Every state between `DRAFT` and `CLOSED`: `TO_FINALIZE`, `TO_APPROVE`, `TO_POST`, `PUBLISHED`                                                                                                                                  |
-| What an update replaces                  | The fields its body carries; it never changes the status                                                                                                                                                                       |
-| Which partial save an update follows     | The offer's own workflow, like its transitions: a draft created without partial save still needs compensation, whatever the company's current setting                                                                          |
-| The dates                                | `publishedAt` is set on the first publication and kept through close and reopen; a withdraw back to `DRAFT` clears it and `closedAt`                                                                                           |
-| `locationCity` for a company address     | `null`: the API does not expose the company's address, so the city filter only matches custom addresses                                                                                                                        |
+| Ambiguity                            | Resolution                                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What a complete offer needs          | A create needs a title and a location, and an update cannot remove them, so only compensation can be missing: at least one salary or bonus entry                                                                                            |
+| Where an incomplete offer starts     | With partial save, in `TO_FINALIZE`, as the create endpoint says; a complete offer starts in `DRAFT`. Without partial save, an incomplete body is a 422. An offer in `TO_FINALIZE` cannot be deleted until it is withdrawn to `DRAFT`       |
+| What an incomplete offer can do      | `finalize` stays listed and answers `INCOMPLETE_OFFER`. `submit` never does: an incomplete draft only exists under partial save (after a withdraw), and goes to `TO_FINALIZE`                                                               |
+| Which states `withdraw` leaves       | `TO_FINALIZE`, `TO_APPROVE`, `TO_POST` and `PUBLISHED`. `PUBLISHED` is the debatable one: it unpublishes an offer so it can be edited                                                                                                       |
+| What an update replaces              | The fields its body carries, since every field of the update body is optional; it never changes the status                                                                                                                                  |
+| Which partial save an update follows | The offer's own workflow, like its transitions: a draft created without partial save still needs compensation, whatever the company's current setting. The API does not expose it, so the edit form always offers to save and shows the 422 |
+| The dates                            | `publishedAt` is set on the first publication and kept through close and reopen; a withdraw back to `DRAFT` clears it and `closedAt`                                                                                                        |
+| `locationCity` for a company address | `null`: the API does not expose the company's address, so the city filter only matches custom addresses                                                                                                                                     |
+| A reject without a reason            | 422 `VALIDATION_ERROR` with a field error on `reason`, the shape every other validation failure uses, though the transition's 422 declares the plain `Error` shape                                                                          |
 
 ## Internationalization
 
 - French and English, one JSON per language, kebab-case keys grouped by screen and feature (`job-offers.list.title`). An API value keeps its own spelling in its key (`status.TO_APPROVE`), so no mapping sits between them.
 - The language starts from `navigator.language`, is saved in `localStorage` and switches from the app bar.
-- MUI's `frFR` and `enUS` locales translate its built-in labels; `Intl` formats dates and amounts in the offer's currency.
+- MUI's `frFR` and `enUS` locales translate its built-in labels; `Intl` formats dates, and each amount in its entry's currency.
 
 ## Loading and errors
 
-- Each screen shows a skeleton of its own layout while its query is pending.
-- A route's `errorComponent` catches what a screen throws; the root one catches the rest, with a retry.
-- A failed write shows its message where it was triggered: on the field, above the form, or in a snackbar for a transition.
+- A screen shows a skeleton of its own layout on its first load; the list then keeps its rows while a filter or a page change loads.
+- A route's `errorComponent` catches what a screen throws; the root one catches the rest. Its retry resets the failed queries before rendering the route again _(planned: today it resets the route only)_.
+- A failed write shows its message where it was triggered: on the field, at the top of the step, or in a snackbar for a transition.
 
 ## Tests
 
@@ -162,17 +193,17 @@ A behaviour is proved once, in the layer that owns it.
 | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Pure functions (schema, error mapping) | Each rule's boundaries, as plain functions                                                       |
 | Form machine, through `createActor`    | Each transition and guard, with no DOM                                                           |
-| Mock store                             | The state machine under each configuration, since every screen test relies on it                 |
+| Mock store and handlers                | The state machine under each configuration, since every screen test relies on it                 |
 | Screens, through Testing Library + MSW | What a user does: filter the list, walk the form and its errors, run a transition, save settings |
 
-No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/`.
+No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/` over all of `src/` except generated files, the entry point and test helpers; the mock counts, since its rules are code the screens depend on. The target is 80 %.
 
 ## Conventions
 
 - Names in full: a noun for a value, a verb and its object for a function, a state for a boolean.
 - A file is named for its one component (`job-offer-form.tsx`, `JobOfferForm`).
 - Return early: the empty or failed case first.
-- A form holds its fields and their validation; its parent passes `onSubmit` and the failure to show.
+- A form holds its fields, their validation and its flow; its parent passes an async `onSave` that performs the request.
 
 ## Left out
 
