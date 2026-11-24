@@ -2,12 +2,14 @@ import { MenuItem, TextField } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 import { LANGUAGES } from './i18n';
+import { useLanguage } from './use-language';
 
 const LANGUAGE_NAMES = { en: 'English', fr: 'Français' } as const;
 
 /** Switches the app's language; the choice is saved for the next visit. */
 export function LanguageSelect() {
   const { i18n, t } = useTranslation();
+  const language = useLanguage();
 
   return (
     <TextField
@@ -15,11 +17,11 @@ export function LanguageSelect() {
       onChange={(event) => i18n.changeLanguage(event.target.value)}
       select
       size="small"
-      value={i18n.language}
+      value={language}
     >
-      {LANGUAGES.map((language) => (
-        <MenuItem key={language} lang={language} value={language}>
-          {LANGUAGE_NAMES[language]}
+      {LANGUAGES.map((option) => (
+        <MenuItem key={option} lang={option} value={option}>
+          {LANGUAGE_NAMES[option]}
         </MenuItem>
       ))}
     </TextField>

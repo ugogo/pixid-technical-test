@@ -6,6 +6,7 @@ import fr from './fr.json';
 
 export const LANGUAGES = ['en', 'fr'] as const;
 export type Language = (typeof LANGUAGES)[number];
+export const FALLBACK_LANGUAGE: Language = 'en';
 
 const LANGUAGE_STORAGE_KEY = 'language';
 
@@ -15,7 +16,7 @@ declare module 'i18next' {
   }
 }
 
-function isLanguage(value: string | null): value is Language {
+export function isLanguage(value: string | null | undefined): value is Language {
   return LANGUAGES.some((language) => language === value);
 }
 
@@ -26,7 +27,7 @@ function initialLanguage(): Language {
     return savedLanguage;
   }
 
-  return navigator.language.startsWith('fr') ? 'fr' : 'en';
+  return navigator.language.startsWith('fr') ? 'fr' : FALLBACK_LANGUAGE;
 }
 
 i18n.on('languageChanged', (language) => {
@@ -35,7 +36,7 @@ i18n.on('languageChanged', (language) => {
 });
 
 await i18n.use(initReactI18next).init({
-  fallbackLng: 'en',
+  fallbackLng: FALLBACK_LANGUAGE,
   interpolation: { escapeValue: false },
   lng: initialLanguage(),
   resources: { en: { translation: en }, fr: { translation: fr } },
