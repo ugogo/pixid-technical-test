@@ -127,9 +127,11 @@ MSW intercepts every call in the browser and in the tests; there is no backend t
 - Refusals use the swagger's codes: 401 without `X-Company-Id`, 404 for another company's offer, 403 for its configuration, 409 `INVALID_STATE`, 400 `INVALID_TRANSITION` and `BAD_REQUEST`, 422 `VALIDATION_ERROR` and `INCOMPLETE_OFFER`.
 - The seed walks each offer through the store's own operations under a fixed clock and fixed ids, so its statuses, dates and history agree and every run reads the same. The store resets on a page reload, and after each test.
 
-### Where the swagger leaves a choice
+### Swagger ambiguities and how the mock resolves them
 
-| Question                                 | Choice                                                                                                                                                                                                                         |
+The swagger is the only specification, and on a few points it is silent or contradicts itself: `withdraw` leaves "any active state" without saying which states are active, and the create endpoint puts an incomplete offer in `TO_FINALIZE` while `submit` also leads there from `DRAFT`. A mock must answer one way, so each point below records the reading it takes; a real backend may decide otherwise, and the UI follows what the API returns either way.
+
+| Ambiguity                                | Resolution                                                                                                                                                                                                                     |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | What a complete offer needs              | A title and a location are required by every request, so only compensation can be missing: at least one salary or bonus entry                                                                                                  |
 | Where an incomplete offer starts         | With partial save, in `TO_FINALIZE` (the create endpoint says so); a complete offer starts in `DRAFT`. An incomplete draft (after a withdraw) is submitted to `TO_FINALIZE`. Without partial save, an incomplete body is a 422 |
