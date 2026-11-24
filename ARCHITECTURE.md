@@ -114,11 +114,30 @@ saving ──done──────▶ saved: navigate to the detail
 
 MSW intercepts every call in the browser and in the tests; there is no backend to run.
 
-- An in-memory store implements the swagger's state machine, its pagination, filters and sorting.
+| File            | Holds                                                                                |
+| --------------- | ------------------------------------------------------------------------------------ |
+| `workflow.ts`   | The state machine: the transitions a status allows under a workflow, as one function |
+| `validation.ts` | The swagger's field constraints, reported under its JSON paths                       |
+| `store.ts`      | Offers, history and configurations in memory, and the rules that change them         |
+| `seed.ts`       | 30 offers for the current company, 2 for another one                                 |
+| `handlers.ts`   | The HTTP layer: query parsing, the company header, the delay, errors as responses    |
+
 - Each offer keeps the workflow configuration it was created with: a configuration change applies to new offers only, as the swagger states.
-- Every response waits a realistic delay (`delay()`), zero in tests, so skeletons and pending states show.
-- Refusals use the swagger's codes: 409 `INVALID_STATE`, 400 `INVALID_TRANSITION`, 422 `VALIDATION_ERROR` and `INCOMPLETE_OFFER`.
-- A seed of about 30 offers covers every status.
+- Every response waits MSW's realistic `delay()` (100 to 400 ms in the browser, a few ms under Node), so skeletons and pending states show.
+- Refusals use the swagger's codes: 401 without `X-Company-Id`, 404 for another company's offer, 403 for its configuration, 409 `INVALID_STATE`, 400 `INVALID_TRANSITION` and `BAD_REQUEST`, 422 `VALIDATION_ERROR` and `INCOMPLETE_OFFER`.
+- The seed walks each offer through the store's own operations under a fixed clock and fixed ids, so its statuses, dates and history agree and every run reads the same. The store resets on a page reload, and after each test.
+
+### Where the swagger leaves a choice
+
+| Question                                 | Choice                                                                                                                                                                                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| What a complete offer needs              | A title and a location are required by every request, so only compensation can be missing: at least one salary or bonus entry                                                                                                  |
+| Where an incomplete offer starts         | With partial save, in `TO_FINALIZE` (the create endpoint says so); a complete offer starts in `DRAFT`. An incomplete draft (after a withdraw) is submitted to `TO_FINALIZE`. Without partial save, an incomplete body is a 422 |
+| Whether an incomplete offer lists submit | Yes: `submit` or `finalize` stays listed and answers `INCOMPLETE_OFFER`, so the UI can say what is missing                                                                                                                     |
+| Which states `withdraw` leaves           | Every state between `DRAFT` and `CLOSED`: `TO_FINALIZE`, `TO_APPROVE`, `TO_POST`, `PUBLISHED`                                                                                                                                  |
+| What an update replaces                  | The fields its body carries; it never changes the status                                                                                                                                                                       |
+| The dates                                | `publishedAt` is set on the first publication and kept through close and reopen; a withdraw back to `DRAFT` clears it and `closedAt`                                                                                           |
+| `locationCity` for a company address     | `null`: the API does not expose the company's address, so the city filter only matches custom addresses                                                                                                                        |
 
 ## Internationalization
 
