@@ -1,40 +1,27 @@
-import { queryOptions } from '@tanstack/react-query';
+import { keepPreviousData } from '@tanstack/react-query';
 
-import { unwrap } from '@/shared/api/api-request-error';
-import { apiClient } from '@/shared/api/client';
+import { $api } from '@/shared/api/client';
 
-import { jobOfferKeys } from './job-offer-keys';
+import type { JobOfferListQuery } from '../job-offer-types';
 
-/** One offer's reads, as options a screen passes to `useQuery`. */
+const byId = (jobOfferId: string) => ({ params: { path: { jobOfferId } } });
+
+/** The offers' reads, as options a screen passes to `useQuery`; their keys are what writes refresh. */
 export const jobOfferQueries = {
+  /** The key every list shares, whatever its query: `['get', '/job-offers']`. */
+  lists: () => $api.queryOptions('get', '/job-offers').queryKey,
+  // The previous page stays on screen while the next one loads.
+  list: (query: JobOfferListQuery) =>
+    $api.queryOptions(
+      'get',
+      '/job-offers',
+      { params: { query } },
+      { placeholderData: keepPreviousData },
+    ),
   detail: (jobOfferId: string) =>
-    queryOptions({
-      queryKey: jobOfferKeys.detail(jobOfferId),
-      queryFn: ({ signal }) =>
-        unwrap(
-          apiClient.GET('/job-offers/{jobOfferId}', { params: { path: { jobOfferId } }, signal }),
-        ),
-    }),
+    $api.queryOptions('get', '/job-offers/{jobOfferId}', byId(jobOfferId)),
   transitions: (jobOfferId: string) =>
-    queryOptions({
-      queryKey: jobOfferKeys.transitions(jobOfferId),
-      queryFn: ({ signal }) =>
-        unwrap(
-          apiClient.GET('/job-offers/{jobOfferId}/transitions', {
-            params: { path: { jobOfferId } },
-            signal,
-          }),
-        ),
-    }),
+    $api.queryOptions('get', '/job-offers/{jobOfferId}/transitions', byId(jobOfferId)),
   history: (jobOfferId: string) =>
-    queryOptions({
-      queryKey: jobOfferKeys.history(jobOfferId),
-      queryFn: ({ signal }) =>
-        unwrap(
-          apiClient.GET('/job-offers/{jobOfferId}/history', {
-            params: { path: { jobOfferId } },
-            signal,
-          }),
-        ),
-    }),
+    $api.queryOptions('get', '/job-offers/{jobOfferId}/history', byId(jobOfferId)),
 };

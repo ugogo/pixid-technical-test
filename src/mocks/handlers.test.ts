@@ -51,12 +51,12 @@ describe('mocked API', () => {
   });
 
   test('an invalid query parameter is refused', async () => {
-    const { error, response } = await apiClient.GET('/job-offers', {
-      params: { query: { size: 500 } },
+    await expect(
+      apiClient.GET('/job-offers', { params: { query: { size: 500 } } }),
+    ).rejects.toMatchObject({
+      status: 400,
+      body: { code: 'BAD_REQUEST', message: "Invalid size parameter: '500'" },
     });
-
-    expect(response.status).toBe(400);
-    expect(error).toEqual({ code: 'BAD_REQUEST', message: "Invalid size parameter: '500'" });
   });
 
   test('a request without the company header is unauthorized', async () => {
@@ -97,10 +97,10 @@ describe('mocked API', () => {
   });
 
   test("another company's configuration is forbidden", async () => {
-    const { response } = await apiClient.GET('/companies/{companyId}/configuration', {
-      params: { path: { companyId: OTHER_COMPANY_ID } },
-    });
-
-    expect(response.status).toBe(403);
+    await expect(
+      apiClient.GET('/companies/{companyId}/configuration', {
+        params: { path: { companyId: OTHER_COMPANY_ID } },
+      }),
+    ).rejects.toMatchObject({ status: 403 });
   });
 });

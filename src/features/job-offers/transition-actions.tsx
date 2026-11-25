@@ -40,7 +40,10 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
   }
 
   function run({ action }: Transition, reason?: string) {
-    transition.mutate({ action, reason }, { onSettled: () => setSelected(undefined) });
+    transition.mutate(
+      { params: { path: { jobOfferId, action } }, body: reason ? { reason } : {} },
+      { onSettled: () => setSelected(undefined) },
+    );
   }
 
   function choose(candidate: Transition) {

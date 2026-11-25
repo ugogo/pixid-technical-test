@@ -1,37 +1,25 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 
-import { ensureOk, unwrap } from '@/shared/api/api-request-error';
-import { apiClient } from '@/shared/api/client';
-import type { TransitionAction } from '@/shared/api/enums';
+import { $api } from '@/shared/api/client';
 
-import { jobOfferKeys } from './job-offer-keys';
-
-interface TransitionVariables {
-  action: TransitionAction;
-  reason?: string;
-}
+import { jobOfferQueries } from './job-offer-queries';
 
 /** Moves an offer along its workflow; buttons stay disabled until the next transitions arrive. */
 export function useTransitionJobOffer(jobOfferId: string) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: ({ action, reason }: TransitionVariables) =>
-      unwrap(
-        apiClient.POST('/job-offers/{jobOfferId}/transitions/{action}', {
-          params: { path: { jobOfferId, action } },
-          body: reason ? { reason } : {},
-        }),
-      ),
+  return $api.useMutation('post', '/job-offers/{jobOfferId}/transitions/{action}', {
     // The answer is the updated offer: keep it, and refetch only what it does not carry.
     onSuccess: (offer) => {
-      queryClient.setQueryData(jobOfferKeys.detail(jobOfferId), offer);
+      queryClient.setQueryData(jobOfferQueries.detail(jobOfferId).queryKey, offer);
 
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: jobOfferKeys.transitions(jobOfferId) }),
-        queryClient.invalidateQueries({ queryKey: jobOfferKeys.history(jobOfferId) }),
-        queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() }),
-      ]);
+      return Promise.all(
+        [
+          jobOfferQueries.transitions(jobOfferId).queryKey,
+          jobOfferQueries.history(jobOfferId).queryKey,
+          jobOfferQueries.lists(),
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
     },
   });
 }
@@ -40,13 +28,11 @@ export function useTransitionJobOffer(jobOfferId: string) {
 export function useDeleteJobOffer(jobOfferId: string) {
   const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: () =>
-      ensureOk(apiClient.DELETE('/job-offers/{jobOfferId}', { params: { path: { jobOfferId } } })),
+  return $api.useMutation('delete', '/job-offers/{jobOfferId}', {
     onSuccess: () => {
-      queryClient.removeQueries({ queryKey: jobOfferKeys.detail(jobOfferId) });
+      queryClient.removeQueries({ queryKey: jobOfferQueries.detail(jobOfferId).queryKey });
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
     },
   });
 }

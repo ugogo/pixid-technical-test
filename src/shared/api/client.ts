@@ -1,5 +1,7 @@
 import createClient from 'openapi-fetch';
+import createQueryClient from 'openapi-react-query';
 
+import { ApiRequestError } from './api-request-error';
 import { CURRENT_COMPANY_ID } from './current-company';
 import type { paths } from './schema';
 
@@ -21,3 +23,19 @@ export const apiClient = createClient<ClientPaths>({
   baseUrl: API_BASE_URL,
   headers: { 'X-Company-Id': CURRENT_COMPANY_ID },
 });
+
+// openapi-fetch resolves an error status instead of throwing. Throwing here, with the status,
+// lets the retry rule tell a 404 from a network failure.
+apiClient.use({
+  async onResponse({ response }) {
+    if (!response.ok) {
+      throw new ApiRequestError(response.status, await response.json().catch(() => undefined));
+    }
+  },
+});
+
+/**
+ * TanStack Query options and hooks typed from the swagger; their data is never `undefined`.
+ * Their error type says the API's error body, but what they throw is the `ApiRequestError` above.
+ */
+export const $api = createQueryClient(apiClient);

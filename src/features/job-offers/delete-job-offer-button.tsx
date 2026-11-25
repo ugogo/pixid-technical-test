@@ -26,7 +26,10 @@ export function DeleteJobOfferButton({ jobOfferId }: { jobOfferId: string }) {
         message={t('job-offer.delete.body')}
         onClose={() => setIsConfirming(false)}
         onConfirm={() =>
-          deletion.mutate(undefined, { onSuccess: () => void navigate({ to: '/job-offers' }) })
+          deletion.mutate(
+            { params: { path: { jobOfferId } } },
+            { onSuccess: () => void navigate({ to: '/job-offers' }) },
+          )
         }
         open={isConfirming}
         title={t('job-offer.delete.title')}

@@ -22,36 +22,10 @@ export class ApiRequestError extends Error {
 
 /** The translation key that tells the user why a write failed. */
 export function errorMessageKey(
-  error: Error,
+  error: unknown,
 ): `errors.${(typeof KNOWN_ERROR_CODES)[number]}` | 'errors.generic' {
   const code = error instanceof ApiRequestError ? error.code : undefined;
   const knownCode = KNOWN_ERROR_CODES.find((candidate) => candidate === code);
 
   return knownCode ? `errors.${knownCode}` : 'errors.generic';
-}
-
-/**
- * Turns an openapi-fetch result into what TanStack Query expects from a query function.
- *
- * openapi-fetch never throws on an error status: it resolves `{ data, error, response }`, with
- * `data` undefined on a 4xx or 5xx. Returning that `data` would hand Query `undefined`, which it
- * rejects with a generic error that has lost the status and the API's error body, so the retry
- * rule could not tell a 404 from a network failure. `unwrap` throws an `ApiRequestError` with
- * both instead, and returns `data` typed as present, so a query's data is never `T | undefined`.
- */
-export async function unwrap<Data>(
-  pending: Promise<{ data?: Data; error?: unknown; response: Response }>,
-): Promise<Data> {
-  const { data, error, response } = await pending;
-
-  if (!response.ok || data === undefined) throw new ApiRequestError(response.status, error);
-
-  return data;
-}
-
-/** For a response with no body, such as a 204: throws an `ApiRequestError` on an error status. */
-export async function ensureOk(pending: Promise<{ error?: unknown; response: Response }>) {
-  const { error, response } = await pending;
-
-  if (!response.ok) throw new ApiRequestError(response.status, error);
 }
