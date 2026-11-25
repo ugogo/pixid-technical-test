@@ -162,15 +162,11 @@ export const handlers = [
   ),
   http.put(
     jobOffer,
-    endpoint(async ({ companyId, request, params }) =>
-      HttpResponse.json(
-        store.updateJobOffer(
-          companyId,
-          String(params.jobOfferId),
-          await readBody(request, { required: true }),
-        ),
-      ),
-    ),
+    endpoint(async ({ companyId, request, params }) => {
+      const body = await readBody(request, { required: true });
+
+      return HttpResponse.json(store.updateJobOffer(companyId, String(params.jobOfferId), body));
+    }),
   ),
   http.delete(
     jobOffer,
@@ -188,16 +184,13 @@ export const handlers = [
   ),
   http.post(
     `${jobOffer}/transitions/:action`,
-    endpoint(async ({ companyId, request, params }) =>
-      HttpResponse.json(
-        store.transitionJobOffer(
-          companyId,
-          String(params.jobOfferId),
-          String(params.action),
-          await readBody(request, { required: false }),
-        ),
-      ),
-    ),
+    endpoint(async ({ companyId, request, params }) => {
+      const body = await readBody(request, { required: false });
+
+      return HttpResponse.json(
+        store.transitionJobOffer(companyId, String(params.jobOfferId), String(params.action), body),
+      );
+    }),
   ),
   http.get(
     `${jobOffer}/history`,
@@ -213,14 +206,12 @@ export const handlers = [
   ),
   http.put(
     configuration,
-    endpoint(async ({ companyId, request, params }) =>
-      HttpResponse.json(
-        store.updateConfiguration(
-          companyId,
-          String(params.companyId),
-          await readBody(request, { required: true }),
-        ),
-      ),
-    ),
+    endpoint(async ({ companyId, request, params }) => {
+      const body = await readBody(request, { required: true });
+
+      return HttpResponse.json(
+        store.updateConfiguration(companyId, String(params.companyId), body),
+      );
+    }),
   ),
 ];
