@@ -10,7 +10,8 @@
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
     "import/no-unassigned-import": "off",
-    "import/no-named-as-default-member": "off"
+    "import/no-named-as-default-member": "off",
+    "vitest/expect-expect": ["error", { "assertFunctionNames": ["expect", "expectAccessible"] }]
   },
   "ignorePatterns": [
     "coverage",
