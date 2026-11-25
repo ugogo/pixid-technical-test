@@ -4,6 +4,9 @@ import { z } from 'zod';
 const KNOWN_ERROR_CODES = ['INVALID_TRANSITION', 'INVALID_STATE', 'INCOMPLETE_OFFER'] as const;
 
 const errorBodySchema = z.object({ code: z.string() });
+const validationErrorBodySchema = z.object({
+  fieldErrors: z.array(z.object({ field: z.string(), message: z.string() })),
+});
 
 /** A response the API answered with an error status, kept with its body for the caller to read. */
 export class ApiRequestError extends Error {
@@ -17,6 +20,11 @@ export class ApiRequestError extends Error {
   /** The swagger's machine-readable error code (`INVALID_STATE`, `INCOMPLETE_OFFER`…), if any. */
   get code(): string | undefined {
     return errorBodySchema.safeParse(this.body).data?.code;
+  }
+
+  /** A 422's field errors, keyed by the swagger's JSON path (`compensation.salaryEntries[0].amount`). */
+  get fieldErrors() {
+    return validationErrorBodySchema.safeParse(this.body).data?.fieldErrors ?? [];
   }
 }
 

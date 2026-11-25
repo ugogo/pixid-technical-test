@@ -6,8 +6,12 @@ import { Section } from '@/shared/ui/section';
 
 import type { JobOffer } from './job-offer-types';
 
+/** What the details show: an offer, or one being written, which has no dates yet. */
+type JobOfferContent = Pick<JobOffer, 'location' | 'compensation'> &
+  Partial<Pick<JobOffer, 'createdAt' | 'updatedAt' | 'publishedAt' | 'closedAt'>>;
+
 /** What an offer says: where, how much, and when it moved. */
-export function JobOfferDetails({ offer }: { offer: JobOffer }) {
+export function JobOfferDetails({ offer }: { offer: JobOfferContent }) {
   const { t } = useTranslation();
   const format = useFormatters();
   const { address } = offer.location;
@@ -66,25 +70,27 @@ export function JobOfferDetails({ offer }: { offer: JobOffer }) {
             ))}
           </Section>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Section title={t('job-offer.sections.dates')}>
-            <Stack component="dl" spacing={0.5} sx={{ m: 0 }}>
-              {dates.map(
-                ([label, date]) =>
-                  date && (
-                    <Stack direction="row" key={label} spacing={1}>
-                      <Typography color="text.secondary" component="dt">
-                        {t(`job-offer.dates.${label}`)}
-                      </Typography>
-                      <Typography component="dd" sx={{ m: 0 }}>
-                        {format.date(date)}
-                      </Typography>
-                    </Stack>
-                  ),
-              )}
-            </Stack>
-          </Section>
-        </Grid>
+        {offer.createdAt && (
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Section title={t('job-offer.sections.dates')}>
+              <Stack component="dl" spacing={0.5} sx={{ m: 0 }}>
+                {dates.map(
+                  ([label, date]) =>
+                    date && (
+                      <Stack direction="row" key={label} spacing={1}>
+                        <Typography color="text.secondary" component="dt">
+                          {t(`job-offer.dates.${label}`)}
+                        </Typography>
+                        <Typography component="dd" sx={{ m: 0 }}>
+                          {format.date(date)}
+                        </Typography>
+                      </Stack>
+                    ),
+                )}
+              </Stack>
+            </Section>
+          </Grid>
+        )}
       </Grid>
     </Paper>
   );

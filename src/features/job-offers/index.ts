@@ -1,6 +1,9 @@
 export { jobOfferQueries } from './api/job-offer-queries';
 export { useJobOffers } from './api/use-job-offers';
+export { useCreateJobOffer, useUpdateJobOffer } from './api/use-job-offer-mutations';
 export { DeleteJobOfferButton } from './delete-job-offer-button';
+export { isEditable } from './editable';
+export { JobOfferForm } from './form/job-offer-form';
 export { JobOfferDetails } from './job-offer-details';
 export { JobOfferFilters } from './job-offer-filters';
 export { JobOfferHistory } from './job-offer-history';

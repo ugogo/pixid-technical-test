@@ -8,6 +8,7 @@ import {
   useJobOffers,
   type JobOfferListSearch,
 } from '@/features/job-offers';
+import { RouterButton } from '@/shared/ui/router-link';
 
 const route = getRouteApi('/job-offers/');
 
@@ -25,9 +26,14 @@ export function JobOffersScreen() {
 
   return (
     <Stack spacing={3}>
-      <Typography component="h1" variant="h4">
-        {t('job-offers.list.title')}
-      </Typography>
+      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography component="h1" variant="h4">
+          {t('job-offers.list.title')}
+        </Typography>
+        <RouterButton to="/job-offers/new" variant="contained">
+          {t('job-offers.new')}
+        </RouterButton>
+      </Stack>
       <JobOfferFilters
         onChange={updateSearch}
         onReset={() => void navigate({ search: { sort: search.sort, size: search.size } })}

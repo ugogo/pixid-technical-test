@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobOffersIndexRouteImport } from './routes/job-offers/index'
 import { Route as JobOffersJobOfferIdRouteImport } from './routes/job-offers/$jobOfferId'
+import { Route as JobOffersNewRouteImport } from './routes/job-offers/new'
+import { Route as JobOffersJobOfferIdEditRouteImport } from './routes/job-offers/$jobOfferId_.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,69 @@ const JobOffersJobOfferIdRoute = JobOffersJobOfferIdRouteImport.update({
   path: '/job-offers/$jobOfferId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JobOffersNewRoute = JobOffersNewRouteImport.update({
+  id: '/job-offers/new',
+  path: '/job-offers/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JobOffersJobOfferIdEditRoute = JobOffersJobOfferIdEditRouteImport.update({
+  id: '/job-offers/$jobOfferId_/edit',
+  path: '/job-offers/$jobOfferId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
+  '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers/': typeof JobOffersIndexRoute
+  '/job-offers/$jobOfferId/edit': typeof JobOffersJobOfferIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
+  '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers': typeof JobOffersIndexRoute
+  '/job-offers/$jobOfferId/edit': typeof JobOffersJobOfferIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
+  '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers/': typeof JobOffersIndexRoute
+  '/job-offers/$jobOfferId_/edit': typeof JobOffersJobOfferIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/job-offers/$jobOfferId' | '/job-offers/'
+  fullPaths:
+    | '/'
+    | '/job-offers/$jobOfferId'
+    | '/job-offers/new'
+    | '/job-offers/'
+    | '/job-offers/$jobOfferId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/job-offers/$jobOfferId' | '/job-offers'
-  id: '__root__' | '/' | '/job-offers/$jobOfferId' | '/job-offers/'
+  to:
+    | '/'
+    | '/job-offers/$jobOfferId'
+    | '/job-offers/new'
+    | '/job-offers'
+    | '/job-offers/$jobOfferId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/job-offers/$jobOfferId'
+    | '/job-offers/new'
+    | '/job-offers/'
+    | '/job-offers/$jobOfferId_/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JobOffersJobOfferIdRoute: typeof JobOffersJobOfferIdRoute
+  JobOffersNewRoute: typeof JobOffersNewRoute
   JobOffersIndexRoute: typeof JobOffersIndexRoute
+  JobOffersJobOfferIdEditRoute: typeof JobOffersJobOfferIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +118,29 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobOffersJobOfferIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/job-offers/new': {
+      id: '/job-offers/new'
+      path: '/job-offers/new'
+      fullPath: '/job-offers/new'
+      preLoaderRoute: typeof JobOffersNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/job-offers/$jobOfferId_/edit': {
+      id: '/job-offers/$jobOfferId_/edit'
+      path: '/job-offers/$jobOfferId/edit'
+      fullPath: '/job-offers/$jobOfferId/edit'
+      preLoaderRoute: typeof JobOffersJobOfferIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JobOffersJobOfferIdRoute: JobOffersJobOfferIdRoute,
+  JobOffersNewRoute: JobOffersNewRoute,
   JobOffersIndexRoute: JobOffersIndexRoute,
+  JobOffersJobOfferIdEditRoute: JobOffersJobOfferIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
