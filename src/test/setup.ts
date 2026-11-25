@@ -1,6 +1,7 @@
 import { cleanup } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
+import { resetMockStore } from '@/mocks/handlers';
 import { server } from '@/mocks/node';
 import { i18n } from '@/shared/i18n/i18n';
 
@@ -12,6 +13,7 @@ beforeAll(async () => {
 afterEach(async () => {
   cleanup();
   server.resetHandlers();
+  resetMockStore();
   localStorage.clear();
   await i18n.changeLanguage('en');
 });
