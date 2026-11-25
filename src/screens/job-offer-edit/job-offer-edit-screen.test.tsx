@@ -35,6 +35,25 @@ describe('JobOfferEditScreen', () => {
     ).toBeInTheDocument();
   });
 
+  test('after a save, the offer shows the transitions of its new content, not the old ones', async () => {
+    const jobOfferId = await seededOfferId('Comptable fournisseurs');
+    const { router } = await renderRoute(`/job-offers/${jobOfferId}`);
+    const user = userEvent.setup();
+
+    // An incomplete draft under partial save can only be saved as incomplete.
+    expect(await screen.findByRole('button', { name: 'Save as incomplete' })).toBeInTheDocument();
+    await user.click(screen.getByRole('link', { name: 'Edit' }));
+    await user.click(await screen.findByRole('button', { name: 'Next' }));
+    await user.click(await screen.findByRole('button', { name: 'Add a salary' }));
+    await user.type(screen.getByRole('textbox', { name: 'Amount' }), '2100');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(await screen.findByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe(`/job-offers/${jobOfferId}`));
+    expect(screen.queryByRole('button', { name: 'Save as incomplete' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Submit for approval' })).toBeInTheDocument();
+  });
+
   test('sends an offer past TO_FINALIZE back to its detail', async () => {
     const { router, jobOfferId } = await renderEdit('Aide-soignant');
 
@@ -66,10 +85,10 @@ describe('JobOfferEditScreen', () => {
     await user.type(await screen.findByRole('textbox', { name: 'Title' }), ' senior');
     await user.click(screen.getByRole('link', { name: 'Open the offer' }));
 
-    const dialog = await screen.findByRole('dialog', { name: 'Leave without saving?' });
+    const leaveDialog = await screen.findByRole('dialog', { name: 'Leave without saving?' });
 
     expect(router.state.location.pathname).toBe(`/job-offers/${jobOfferId}/edit`);
-    await user.click(within(dialog).getByRole('button', { name: 'Leave' }));
+    await user.click(within(leaveDialog).getByRole('button', { name: 'Leave' }));
     await waitFor(() => expect(router.state.location.pathname).toBe(`/job-offers/${jobOfferId}`));
   });
 });

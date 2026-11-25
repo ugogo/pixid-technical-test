@@ -138,6 +138,7 @@
       "compensation": "Compensation",
       "review": "Review"
     },
+    "step-count": "Step {{number}} of {{count}}",
     "fields": {
       "title": "Title",
       "location": "Location",
@@ -156,6 +157,7 @@
       "currency": "Currency",
       "description": "Description"
     },
+    "character-count": "{{count}}/{{limit}} characters",
     "add-salary": "Add a salary",
     "add-bonus": "Add a bonus",
     "remove-salary": "Remove salary {{number}}",
@@ -182,7 +184,8 @@
       "country-code": "Two capital letters, such as FR.",
       "currency-code": "Three capital letters, such as EUR.",
       "amount": "A number, 0 or more.",
-      "compensation-required": "Add a salary or a bonus, or save and finish later."
+      "compensation-required": "Add a salary or a bonus.",
+      "compensation-required-or-save-early": "Add a salary or a bonus, or save and finish later."
     }
   },
   "settings": {

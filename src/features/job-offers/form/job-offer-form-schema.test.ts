@@ -29,10 +29,10 @@ const customOfferValues: JobOfferFormValues = {
 };
 
 function errorMessages(values: JobOfferFormValues) {
-  const result = jobOfferFormSchema.safeParse(values);
+  const parsedJobOfferForm = jobOfferFormSchema.safeParse(values);
 
   return Object.fromEntries(
-    (result.error?.issues ?? []).map((issue) => [issue.path.join('.'), issue.message]),
+    (parsedJobOfferForm.error?.issues ?? []).map((issue) => [issue.path.join('.'), issue.message]),
   );
 }
 
@@ -46,13 +46,27 @@ function withSalaryAmount(amount: string): JobOfferFormValues {
   };
 }
 
+function amountOf(typed: string) {
+  return jobOfferFormSchema.parse(withSalaryAmount(typed)).compensation.salaryEntries[0]?.amount;
+}
+
+function withLines(lines: string): JobOfferFormValues {
+  return {
+    ...customOfferValues,
+    location: {
+      type: 'CUSTOM',
+      address: { lines, postalCode: '', city: 'Nantes', region: '', countryCode: 'FR' },
+    },
+  };
+}
+
 describe('jobOfferFormSchema', () => {
   test('trims text, upper-cases codes and reads amounts as numbers', () => {
-    const output = jobOfferFormSchema.parse(customOfferValues);
+    const jobOfferFormOutput = jobOfferFormSchema.parse(customOfferValues);
 
-    expect(output.title).toBe('Soudeur TIG (H/F)');
-    expect(output.location.address).toMatchObject({ countryCode: 'FR' });
-    expect(output.compensation.salaryEntries[0]).toEqual({
+    expect(jobOfferFormOutput.title).toBe('Soudeur TIG (H/F)');
+    expect(jobOfferFormOutput.location.address).toMatchObject({ countryCode: 'FR' });
+    expect(jobOfferFormOutput.compensation.salaryEntries[0]).toEqual({
       type: 'MONTHLY',
       amount: 2050.5,
       currency: 'EUR',
@@ -66,8 +80,25 @@ describe('jobOfferFormSchema', () => {
     expect(errorMessages(withSalaryAmount('-1'))).toEqual({
       'compensation.salaryEntries.0.amount': 'amount',
     });
-    expect(errorMessages(withSalaryAmount('abc'))).toEqual({
-      'compensation.salaryEntries.0.amount': 'amount',
+    for (const unreadable of ['abc', '0x10', '1e3', '12,5,0']) {
+      expect(errorMessages(withSalaryAmount(unreadable))).toEqual({
+        'compensation.salaryEntries.0.amount': 'amount',
+      });
+    }
+  });
+
+  test('reads a decimal comma and spaced thousands, as French writes them', () => {
+    expect(amountOf('12,50')).toBe(12.5);
+    expect(amountOf('45 000')).toBe(45000);
+    expect(amountOf(' 2600.5 ')).toBe(2600.5);
+  });
+
+  test('counts the address lines that will be sent: trimmed, blank ones left out', () => {
+    expect(errorMessages(withLines('a\nb\nc\n'))).toEqual({});
+    expect(errorMessages(withLines('a\n\nb\n  \nc'))).toEqual({});
+    expect(errorMessages(withLines(`     ${'x'.repeat(100)}`))).toEqual({});
+    expect(errorMessages(withLines('a\nb\nc\nd'))).toEqual({
+      'location.address.lines': 'too-many-lines',
     });
   });
 

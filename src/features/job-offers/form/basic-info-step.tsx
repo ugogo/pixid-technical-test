@@ -11,19 +11,24 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { FormTextField } from './form-text-field';
-import type { JobOfferFormValues } from './job-offer-form-schema';
+import { TITLE_MAX_LENGTH, type JobOfferFormValues } from './job-offer-form-schema';
 
 /** The offer's title and where the job is. */
 export function BasicInfoStep() {
   const { t } = useTranslation();
-  const { field: locationTypeField } = useController<JobOfferFormValues, 'location.type'>({
-    name: 'location.type',
-  });
+  const {
+    field: { disabled, ...locationTypeField },
+  } = useController<JobOfferFormValues, 'location.type'>({ name: 'location.type' });
 
   return (
     <Stack spacing={3}>
-      <FormTextField label={t('job-offer-form.fields.title')} name="title" required />
-      <FormControl>
+      <FormTextField
+        characterLimit={TITLE_MAX_LENGTH}
+        label={t('job-offer-form.fields.title')}
+        name="title"
+        required
+      />
+      <FormControl disabled={disabled}>
         <FormLabel id="location-type-label">{t('job-offer-form.fields.location')}</FormLabel>
         <RadioGroup aria-labelledby="location-type-label" row {...locationTypeField}>
           <FormControlLabel
