@@ -1,7 +1,6 @@
 import { Alert, AlertTitle, Button } from '@mui/material';
 import { useQueryErrorResetBoundary } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 /** Catches what a page throws; its retry runs the failed queries and the route again. */
@@ -10,12 +9,18 @@ export function RootError() {
   const router = useRouter();
   const queryErrorResetBoundary = useQueryErrorResetBoundary();
 
-  useEffect(() => queryErrorResetBoundary.reset(), [queryErrorResetBoundary]);
-
   return (
     <Alert
       action={
-        <Button color="inherit" onClick={() => router.invalidate()} size="small">
+        <Button
+          color="inherit"
+          onClick={() => {
+            // Lets the failed queries fetch again when the route renders them, then reloads it.
+            queryErrorResetBoundary.reset();
+            void router.invalidate();
+          }}
+          size="small"
+        >
           {t('app.error.retry')}
         </Button>
       }

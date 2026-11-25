@@ -1,5 +1,6 @@
 import { TextField, type TextFieldProps } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+// oxlint-disable-next-line no-restricted-imports -- a timer is an outside system: an effect's job
+import { useEffect, useEffectEvent, useState } from 'react';
 
 const DEBOUNCE_DELAY = 300;
 
@@ -16,8 +17,6 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
   // What the user typed and the parent has not received yet; otherwise the parent's value shows.
   const [draft, setDraft] = useState<string>();
   const [shownValue, setShownValue] = useState(value);
-  const pendingReport = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const latestValue = useRef(value);
 
   // A new value from the parent (a report landing, a reset, Back) wins over the draft.
   if (value !== shownValue) {
@@ -25,16 +24,22 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
     setDraft(undefined);
   }
 
-  useEffect(() => {
-    latestValue.current = value;
-  });
-  useEffect(() => () => clearTimeout(pendingReport.current), []);
-
   function report(typed: string) {
-    clearTimeout(pendingReport.current);
     setDraft(undefined);
-    if (typed !== latestValue.current) onChange(typed);
+    if (typed !== value) onChange(typed);
   }
+
+  const reportSettledDraft = useEffectEvent(report);
+
+  // Reports the draft once it stops changing. Dropping the draft (a report, a reset, leaving the
+  // field) or unmounting clears the pending report.
+  useEffect(() => {
+    if (draft === undefined) return;
+
+    const pendingReport = setTimeout(() => reportSettledDraft(draft), DEBOUNCE_DELAY);
+
+    return () => clearTimeout(pendingReport);
+  }, [draft]);
 
   return (
     <TextField
@@ -43,17 +48,7 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
         if (draft !== undefined) report(draft);
         onBlur?.(event);
       }}
-      onChange={(event) => {
-        const typed = event.target.value;
-        const valueWhenTyped = value;
-
-        setDraft(typed);
-        clearTimeout(pendingReport.current);
-        // Dropped if the parent's value changed meanwhile: its new value won over the draft.
-        pendingReport.current = setTimeout(() => {
-          if (latestValue.current === valueWhenTyped) report(typed);
-        }, DEBOUNCE_DELAY);
-      }}
+      onChange={(event) => setDraft(event.target.value)}
       value={draft ?? value}
     />
   );
