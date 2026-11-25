@@ -6,6 +6,18 @@ export class ApiRequestError extends Error {
   ) {
     super(`API request failed with status ${status}`);
   }
+
+  /** The swagger's machine-readable error code (`INVALID_STATE`, `INCOMPLETE_OFFER`…), if any. */
+  get code(): string | undefined {
+    const { body } = this;
+
+    return typeof body === 'object' &&
+      body !== null &&
+      'code' in body &&
+      typeof body.code === 'string'
+      ? body.code
+      : undefined;
+  }
 }
 
 /**
@@ -25,4 +37,11 @@ export async function unwrap<Data>(
   if (!response.ok || data === undefined) throw new ApiRequestError(response.status, error);
 
   return data;
+}
+
+/** For a response with no body, such as a 204: throws an `ApiRequestError` on an error status. */
+export async function ensureOk(pending: Promise<{ error?: unknown; response: Response }>) {
+  const { error, response } = await pending;
+
+  if (!response.ok) throw new ApiRequestError(response.status, error);
 }

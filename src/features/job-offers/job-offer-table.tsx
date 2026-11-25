@@ -14,7 +14,8 @@ import {
 import { useTranslation } from 'react-i18next';
 
 import { isOneOf } from '@/shared/is-one-of';
-import { useFormatDate } from '@/shared/i18n/use-format-date';
+import { RouterLink } from '@/shared/ui/router-link';
+import { useFormatters } from '@/shared/i18n/use-formatters';
 
 import { PAGE_SIZES, type JobOfferListSearch } from './job-offer-list-search';
 import type { JobOfferPage } from './job-offer-types';
@@ -36,7 +37,7 @@ interface JobOfferTableProps {
 
 export function JobOfferTable({ page, search, isUpdating, onChange }: JobOfferTableProps) {
   const { t } = useTranslation();
-  const formatDate = useFormatDate();
+  const format = useFormatters();
   const offers = page?.content;
 
   /** The active column flips; a new one sorts titles A to Z and dates newest first. */
@@ -96,13 +97,17 @@ export function JobOfferTable({ page, search, isUpdating, onChange }: JobOfferTa
             )}
             {offers?.map((offer) => (
               <TableRow hover key={offer.id}>
-                <TableCell>{offer.title}</TableCell>
+                <TableCell>
+                  <RouterLink params={{ jobOfferId: offer.id }} to="/job-offers/$jobOfferId">
+                    {offer.title}
+                  </RouterLink>
+                </TableCell>
                 <TableCell>
                   <StatusChip status={offer.status} />
                 </TableCell>
                 <TableCell>{offer.locationCity ?? t('job-offers.list.company-address')}</TableCell>
-                <TableCell>{formatDate(offer.createdAt)}</TableCell>
-                <TableCell>{offer.publishedAt ? formatDate(offer.publishedAt) : '—'}</TableCell>
+                <TableCell>{format.date(offer.createdAt)}</TableCell>
+                <TableCell>{offer.publishedAt ? format.date(offer.publishedAt) : '—'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

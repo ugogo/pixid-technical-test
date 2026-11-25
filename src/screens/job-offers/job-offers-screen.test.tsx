@@ -118,6 +118,19 @@ describe('JobOffersScreen', () => {
     expect(within(dataRows()[0]!).getByText('Company address')).toBeInTheDocument();
   });
 
+  test('opens an offer from its title', async () => {
+    const user = userEvent.setup();
+    const { router } = await renderRoute('/job-offers');
+
+    await waitForRows(20);
+    await user.click(screen.getByRole('link', { name: 'Agent d’entretien (H/F)' }));
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Agent d’entretien (H/F)' }),
+    ).toBeInTheDocument();
+    expect(router.state.location.pathname).toMatch(/^\/job-offers\/[\w-]+$/);
+  });
+
   test('a failed load shows an error with a retry', async () => {
     const user = userEvent.setup();
 

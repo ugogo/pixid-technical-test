@@ -10,7 +10,9 @@
       "title": "Une erreur est survenue",
       "retry": "Réessayer"
     },
-    "not-found": "Cette page n'existe pas."
+    "not-found": "Cette page n'existe pas.",
+    "cancel": "Annuler",
+    "back-to-list": "Retour aux offres"
   },
   "job-offers": {
     "list": {
@@ -41,5 +43,89 @@
     "TO_POST": "À diffuser",
     "PUBLISHED": "Publiée",
     "CLOSED": "Clôturée"
+  },
+  "salary-types": {
+    "HOURLY": "par heure",
+    "DAILY": "par jour",
+    "MONTHLY": "par mois",
+    "YEARLY": "par an"
+  },
+  "bonus-types": {
+    "SIGNING": "Prime d'embauche",
+    "PERFORMANCE": "Prime de performance",
+    "ANNUAL": "Prime annuelle",
+    "OTHER": "Autre prime"
+  },
+  "job-offer": {
+    "sections": {
+      "location": "Lieu",
+      "compensation": "Rémunération",
+      "dates": "Dates",
+      "history": "Historique"
+    },
+    "no-compensation": "Aucun salaire ni prime pour le moment.",
+    "dates": {
+      "created-at": "Créée le",
+      "updated-at": "Modifiée le",
+      "published-at": "Publiée le",
+      "closed-at": "Clôturée le"
+    },
+    "history": {
+      "empty": "Aucun changement de statut pour le moment.",
+      "change": "{{from}} → {{to}}",
+      "by": "{{date}} · {{user}}",
+      "reason": "Motif : {{reason}}"
+    },
+    "incomplete": "Ajoutez un salaire ou une prime à cette offre avant de la finaliser.",
+    "delete": {
+      "button": "Supprimer",
+      "title": "Supprimer ce brouillon ?",
+      "body": "L'offre et son historique seront supprimés définitivement."
+    }
+  },
+  "transitions": {
+    "submit": {
+      "TO_FINALIZE": "Enregistrer comme incomplète",
+      "TO_APPROVE": "Soumettre à validation",
+      "TO_POST": "Soumettre pour diffusion",
+      "PUBLISHED": "Publier"
+    },
+    "finalize": {
+      "TO_APPROVE": "Finaliser et soumettre à validation",
+      "TO_POST": "Finaliser et soumettre pour diffusion",
+      "PUBLISHED": "Finaliser et publier"
+    },
+    "approve": {
+      "TO_POST": "Valider",
+      "PUBLISHED": "Valider et publier"
+    },
+    "reject": {
+      "DRAFT": "Refuser"
+    },
+    "post": {
+      "PUBLISHED": "Diffuser"
+    },
+    "close": {
+      "CLOSED": "Clôturer"
+    },
+    "reopen": {
+      "PUBLISHED": "Rouvrir"
+    },
+    "withdraw": {
+      "DRAFT": "Repasser en brouillon"
+    },
+    "reason": "Motif",
+    "confirm": {
+      "title": "{{action}} ?",
+      "withdraw": "L'offre repasse en brouillon et devra refaire son circuit.",
+      "close": "L'offre n'accepte plus de candidatures. Elle pourra être rouverte."
+    },
+    "done": "Statut passé à « {{status}} »."
+  },
+  "errors": {
+    "INVALID_TRANSITION": "Cette action n'est plus possible : l'offre a changé. Rechargez la page.",
+    "INVALID_STATE": "L'offre ne peut plus être modifiée dans son statut actuel.",
+    "INCOMPLETE_OFFER": "Ajoutez d'abord un salaire ou une prime à cette offre.",
+    "generic": "L'action a échoué. Réessayez."
   }
 }
