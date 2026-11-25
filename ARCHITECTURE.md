@@ -14,7 +14,6 @@ A React 19 + MUI app to manage job offers through a per-company workflow, agains
 | Server state    | TanStack Query                                                 | Cache, loading and error states, invalidation after a write                                                                                                                             |
 | API client      | `openapi-typescript` + `openapi-fetch` + `openapi-react-query` | Types generated from the swagger, and query options and mutation hooks typed from them: no request is typed or unwrapped by hand                                                        |
 | Forms           | react-hook-form + zod                                          | Mature MUI integration (`Controller`) and `setError` on nested paths, which the 422 mapping relies on. TanStack Form would match the suite; it is the first thing to try with more time |
-| Form flow       | XState v5                                                      | Steps, saving and failures as explicit states: an impossible combination cannot exist                                                                                                   |
 | Mock API        | MSW                                                            | The same handlers serve the browser and the tests                                                                                                                                       |
 | i18n            | react-i18next                                                  | French and English, switchable at runtime                                                                                                                                               |
 | Tests           | Vitest + Testing Library + MSW                                 | Same config as Vite; screens tested against the real handlers                                                                                                                           |
@@ -81,49 +80,39 @@ The server decides which transitions exist; the UI never recomputes the state ma
 
 ## Forms
 
-The create and edit screens share `JobOfferForm` (`features/job-offers/form/`): three steps (basic information, compensation, review) over one `useForm`, driven by one XState machine. The form only saves; the workflow's actions run from the detail screen.
+The create and edit screens share `JobOfferForm` (`features/job-offers/form/`): three steps (basic information, compensation, review) over one `useForm`. The form only saves; the workflow's actions run from the detail screen.
 
 ### Who holds what
 
-Each piece of state has one owner; nothing is copied into a `useState`.
+Each piece of state has one owner.
 
-| State                                       | Owner                                                                                                                                                           |
-| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The flow: step, validating, saving, failure | `jobOfferFormMachine`                                                                                                                                           |
-| Values and field errors                     | react-hook-form; a hidden step's fields stay registered, so their values survive                                                                                |
-| The request and the cache update            | The screen's mutation, passed to the form as an async `onSave`                                                                                                  |
-| Whether saving early is offered             | On create, the company's `partialSaveEnabled`, read by the screen; on edit, always, since the offer's own workflow is not exposed (see the table below)         |
-| Create or edit                              | Props: an `offer` means edit, and the starting values come from `toJobOfferFormValues(offer)`; without one, empty values                                        |
-| Leaving with unsaved changes                | TanStack Router's `useBlocker`, while the form is dirty and the machine is not done; a saved form opens the offer through `<Navigate replace>`, unblocked       |
-| An offer no longer editable                 | The edit route's loader, which sends it back to its detail. The route is `$jobOfferId_.edit.tsx`, so the edit page replaces the detail instead of nesting in it |
+| State                                     | Owner                                                                                                                                                           |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The flow: step, checking, saving, failure | `JobOfferForm`'s own state: the step on screen, a `FormPhase`, whether the last save failed                                                                     |
+| Values and field errors                   | react-hook-form; a hidden step's fields stay registered, so their values survive                                                                                |
+| The request and the cache update          | The screen's mutation, passed to the form as an async `onSave`                                                                                                  |
+| Whether saving early is offered           | On create, the company's `partialSaveEnabled`, read by the screen; on edit, always, since the offer's own workflow is not exposed (see the table below)         |
+| Create or edit                            | Props: an `offer` means edit, and the starting values come from `toJobOfferFormValues(offer)`; without one, empty values                                        |
+| Leaving with unsaved changes              | TanStack Router's `useBlocker`, while the form is dirty; a saved form opens the offer through `<Navigate replace ignoreBlocker>`                                |
+| An offer no longer editable               | The edit route's loader, which sends it back to its detail. The route is `$jobOfferId_.edit.tsx`, so the edit page replaces the detail instead of nesting in it |
 
-The component starts the machine once, with `machine.provide`. Its three actors wrap react-hook-form and `onSave`; the machine knows neither react-hook-form nor the API.
-
-| Actor             | What it does                                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `validateStep`    | `trigger` on the step's fields; leaving compensation also needs a salary or a bonus                                                  |
-| `validateForSave` | The first step holding an invalid field, under the draft rules (saving early) or the complete ones                                   |
-| `save`            | Sends the request and reads the answer as a `SaveOutcome`: saved, invalid on a step, conflict, or failed. The machine guards on that |
-
-### The machine
+### The flow
 
 ```
-editing
- ├── basicInfo ──NEXT──▶ validating ──valid──▶ compensation ──NEXT──▶ validating ──valid──▶ review
- │      ◀──────────────────BACK─────────────────────┘      ◀────────────BACK──────────────┘
- ├── SAVE_EARLY [canSaveEarly] ──▶ validatingSave (draft rules) ──valid──▶ saving
- └── SAVE (from review) ─────────▶ validatingSave (all rules) ────valid──▶ saving
-                                          └──invalid──▶ the first step holding an error
+basicInfo ──Next (step valid)──▶ compensation ──Next (valid, salary or bonus)──▶ review
+    ◀──────────────Back────────────────┘   ◀──────────────Back────────────────────┘
 
-saving ──saved─────▶ saved (final): the form opens the offer
-       ──invalid───▶ editing.basicInfo | editing.compensation, the first step holding an error
-       ──conflict──▶ conflict (final): a message and a link to the detail, no more input
-       ──failed────▶ editing.<same step> (a history state), with a message
+Save and finish later (if allowed) ─▶ check (draft rules) ─┐
+Create / Save changes (review) ─────▶ check (all rules) ───┴─▶ invalid: the first step holding an error
+                                                              valid: send ─▶ saved: open the offer
+                                                                            ─▶ 422: the first step holding an error
+                                                                            ─▶ 409: a message and a link, no more input
+                                                                            ─▶ other: the same step, with a message
 ```
 
-- **Validation is a state**: XState computes a transition synchronously, so a guard is a plain predicate. Validating invokes a promise actor instead.
-- **No double send**: `saving` accepts no event, and the buttons read `snapshot.can(event)`.
-- **A 422 picks its step** through one guarded transition per step, in step order, so the user lands where the first error is.
+- **No state machine library**: the flow is linear, and four `useState`s hold it in the component that already holds the form. An XState machine was tried first; it repeated what react-hook-form and the mutation already track, and needed a history state to remember the step while saving.
+- **No double send**: every button is disabled while the form checks or saves (`FormPhase`), and submitting is ignored then.
+- **A 422 picks its step**: the step of each field comes from the form's own step-to-fields map, and the first step holding one wins.
 - **A 422 without a field** the form shows (`compensation`, `location.address`) goes to an error slot at the top of its step (`root.basicInfo`, `root.compensation`).
 - **Server messages** show as the server words them, in English: the client validates the same rules first, so a 422 is rare. The schema's own messages are keys under `job-offer-form.errors`.
 
@@ -196,7 +185,6 @@ A behaviour is proved once, in the layer that owns it.
 | Layer                                  | Proves                                                                                           |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Pure functions (schema, error mapping) | Each rule's boundaries, as plain functions                                                       |
-| Form machine, through `createActor`    | Each transition and guard, with no DOM                                                           |
 | Mock store and handlers                | The state machine under each configuration, since every screen test relies on it                 |
 | Screens, through Testing Library + MSW | What a user does: filter the list, walk the form and its errors, run a transition, save settings |
 

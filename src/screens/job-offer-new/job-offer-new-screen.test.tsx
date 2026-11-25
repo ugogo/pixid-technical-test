@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, onTestFinished, test } from 'vitest';
 
 import { server } from '@/mocks/node';
 import { API_BASE_URL } from '@/shared/api/client';
@@ -39,7 +39,10 @@ describe('JobOfferNewScreen', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('€2,100.00 per month')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Create the offer' }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('textbox', { name: 'Amount' })).toHaveValue('2100');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(await screen.findByRole('button', { name: 'Create the offer' }));
 
     await expectOfferOpened(router);
     expect(
@@ -135,8 +138,8 @@ describe('JobOfferNewScreen', () => {
     expect(screen.getByRole('button', { name: 'Add a salary' })).toBeInTheDocument();
   });
 
-  test('says when saving fails, and keeps the values', async () => {
-    const { user } = await renderNewOffer();
+  test('says when saving fails, keeps the values, and saves on the next try', async () => {
+    const { user, router } = await renderNewOffer();
 
     server.use(http.post(`${API_BASE_URL}/job-offers`, () => HttpResponse.error()));
     await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
@@ -146,5 +149,25 @@ describe('JobOfferNewScreen', () => {
       'The offer could not be saved. Check your connection and try again.',
     );
     expect(screen.getByRole('textbox', { name: 'Title' })).toHaveValue('Boulanger (H/F)');
+
+    server.resetHandlers();
+    await user.click(screen.getByRole('button', { name: 'Save and finish later' }));
+
+    await expectOfferOpened(router);
+  });
+
+  test('sends one request however many times save is clicked', async () => {
+    const { user, router } = await renderNewOffer();
+    let createRequests = 0;
+
+    onTestFinished(() => server.events.removeAllListeners());
+    server.events.on('request:start', ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/job-offers')) createRequests += 1;
+    });
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
+    await user.dblClick(screen.getByRole('button', { name: 'Save and finish later' }));
+
+    await expectOfferOpened(router);
+    expect(createRequests).toBe(1);
   });
 });

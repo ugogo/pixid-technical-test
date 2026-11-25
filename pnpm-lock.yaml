@@ -26,9 +26,6 @@ importers:
       '@tanstack/react-router':
         specifier: ^1.170.46
         version: 1.170.46(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      '@xstate/react':
-        specifier: ^6.1.0
-        version: 6.1.0(@types/react@19.3.0)(react@19.3.1)(xstate@5.33.4)
       i18next:
         specifier: ^27.2.7
         version: 27.2.7(typescript@7.0.2)
@@ -50,9 +47,6 @@ importers:
       react-i18next:
         specifier: ^18.0.3
         version: 18.0.3(@types/react@19.3.0)(i18next@27.2.7(typescript@7.0.2))(react@19.3.1)(typescript@7.0.2)
-      xstate:
-        specifier: ^5.33.4
-        version: 5.33.4
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -1157,15 +1151,6 @@ packages:
   '@vitest/spy@5.1.1':
     resolution: {integrity: sha512-6K8C6alQG1/Yc8/ZI22iJS7JEsxPdVzqtqDq+/xM4Z0mGVykemMVjLhqMy/q6/IHYG3kKD8hKSwRen/ZdyI9vQ==}
 
-  '@xstate/react@6.1.0':
-    resolution: {integrity: sha512-ep9F0jGTI63B/jE8GHdMpUqtuz7yRebNaKv8EMUaiSi29NOglywc2X2YSOV/ygbIK+LtmgZ0q9anoEA2iBSEOw==}
-    peerDependencies:
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-      xstate: ^5.28.0
-    peerDependenciesMeta:
-      xstate:
-        optional: true
-
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
@@ -1896,15 +1881,6 @@ packages:
     peerDependencies:
       browserslist: '>= 4.21.0'
 
-  use-isomorphic-layout-effect@1.2.1:
-    resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
-    peerDependencies:
-      '@types/react': '*'
-      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
-    peerDependenciesMeta:
-      '@types/react':
-        optional: true
-
   use-sync-external-store@1.7.0:
     resolution: {integrity: sha512-6L+EeigHMQhdaIPNIFUKwfWJSwWFQ8gJbJ2DLOs5sDIegTwR9fRxvnM3uciHKjIZhFz+KAv2emhWMRvDmMcY8A==}
     peerDependencies:
@@ -2021,9 +1997,6 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
-
-  xstate@5.33.4:
-    resolution: {integrity: sha512-eGNMu3BNqU0Z85P+ouYG5OCZqIABU+QsW6vUieFt9p9gOGs3C+BL10Exg7XdRPSXPQKlP6XoYpYf93r9VmW8mQ==}
 
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
@@ -2861,16 +2834,6 @@ snapshots:
 
   '@vitest/spy@5.1.1': {}
 
-  '@xstate/react@6.1.0(@types/react@19.3.0)(react@19.3.1)(xstate@5.33.4)':
-    dependencies:
-      react: 19.3.1
-      use-isomorphic-layout-effect: 1.2.1(@types/react@19.3.0)(react@19.3.1)
-      use-sync-external-store: 1.7.0(react@19.3.1)
-    optionalDependencies:
-      xstate: 5.33.4
-    transitivePeerDependencies:
-      - '@types/react'
-
   ansi-regex@5.0.1: {}
 
   ansi-regex@6.6.0: {}
@@ -3499,12 +3462,6 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
-  use-isomorphic-layout-effect@1.2.1(@types/react@19.3.0)(react@19.3.1):
-    dependencies:
-      react: 19.3.1
-    optionalDependencies:
-      '@types/react': 19.3.0
-
   use-sync-external-store@1.7.0(react@19.3.1):
     dependencies:
       react: 19.3.1
@@ -3557,8 +3514,6 @@ snapshots:
       strip-ansi: 7.2.0
 
   ws@8.23.0: {}
-
-  xstate@5.33.4: {}
 
   y18n@5.0.8: {}
 
