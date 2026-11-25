@@ -43,7 +43,8 @@ src/
 │   ├── api/                openapi-fetch client, generated types and enum values
 │   ├── ui/                 presentational pieces over MUI (page layout, skeletons)
 │   ├── i18n/               setup, language switcher, `fr.json`, `en.json`
-│   └── is-one-of.ts        narrows a value to one of a list
+│   ├── is-one-of.ts        narrows a value to one of a list
+│   └── use-debounce.ts     a value once it stops changing
 ├── mocks/                  MSW: handlers, in-memory store, seed; only `main.tsx` and the tests import it
 └── test/                   test setup and render helpers
 ```
