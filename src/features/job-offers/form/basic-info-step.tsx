@@ -11,7 +11,7 @@ import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { FormTextField } from './form-text-field';
-import type { JobOfferFormValues } from './job-offer-form-schema';
+import { TITLE_MAX_LENGTH, type JobOfferFormValues } from './job-offer-form-schema';
 
 /** The offer's title and where the job is. */
 export function BasicInfoStep() {
@@ -22,7 +22,12 @@ export function BasicInfoStep() {
 
   return (
     <Stack spacing={3}>
-      <FormTextField label={t('job-offer-form.fields.title')} name="title" required />
+      <FormTextField
+        characterLimit={TITLE_MAX_LENGTH}
+        label={t('job-offer-form.fields.title')}
+        name="title"
+        required
+      />
       <FormControl>
         <FormLabel id="location-type-label">{t('job-offer-form.fields.location')}</FormLabel>
         <RadioGroup aria-labelledby="location-type-label" row {...locationTypeField}>

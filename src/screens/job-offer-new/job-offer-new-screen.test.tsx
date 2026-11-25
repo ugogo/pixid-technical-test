@@ -63,6 +63,22 @@ describe('JobOfferNewScreen', () => {
     expect(screen.getByText('Draft')).toBeInTheDocument();
   });
 
+  test("counts the title's characters against its limit", async () => {
+    const { user } = await renderNewOffer();
+
+    expect(screen.getByText('0/200 characters')).toBeInTheDocument();
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger');
+    expect(screen.getByText('9/200 characters')).toBeInTheDocument();
+  });
+
+  test('cancels back to the list', async () => {
+    const { user, router } = await renderNewOffer();
+
+    await user.click(screen.getByRole('link', { name: 'Cancel' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/job-offers'));
+  });
+
   test('stays on a step until its fields are valid', async () => {
     const { user } = await renderNewOffer();
 

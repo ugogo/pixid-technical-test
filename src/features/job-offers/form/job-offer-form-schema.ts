@@ -20,6 +20,8 @@ export const FORM_ERROR_KEYS = [
 ] as const;
 
 const MAX_ADDRESS_LINES = 3;
+/** The swagger's limit on an offer's title. */
+export const TITLE_MAX_LENGTH = 200;
 
 const optionalText = (maxLength: number) => z.string().trim().max(maxLength, 'too-long');
 const requiredText = (maxLength: number) => optionalText(maxLength).min(1, 'required');
@@ -56,7 +58,7 @@ const addressSchema = z.object({
  * a bonus: saving early skips it, so the form checks it on its own (`hasCompensation`).
  */
 export const jobOfferFormSchema = z.object({
-  title: requiredText(200),
+  title: requiredText(TITLE_MAX_LENGTH),
   location: z.discriminatedUnion('type', [
     // A company address keeps what was typed for a custom one, unchecked, in case the user
     // switches back.

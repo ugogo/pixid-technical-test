@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiRequestError } from '@/shared/api/api-request-error';
 import { isOneOf } from '@/shared/is-one-of';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
-import { RouterLink } from '@/shared/ui/router-link';
+import { RouterButton, RouterLink } from '@/shared/ui/router-link';
 
 import { JobOfferDetails } from '../job-offer-details';
 import type { JobOffer } from '../job-offer-types';
@@ -261,6 +261,14 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
           {shownStep === 'compensation' && <CompensationStep />}
           {shownStep === 'review' && <JobOfferReview values={getValues()} />}
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {shownStep === 'basicInfo' &&
+              (offer ? (
+                <RouterButton params={{ jobOfferId: offer.id }} to="/job-offers/$jobOfferId">
+                  {t('app.cancel')}
+                </RouterButton>
+              ) : (
+                <RouterButton to="/job-offers">{t('app.cancel')}</RouterButton>
+              ))}
             {shownStep !== 'basicInfo' && (
               <Button disabled={isBusy} onClick={() => setShownStep(PREVIOUS_STEP[shownStep])}>
                 {t('job-offer-form.back')}
