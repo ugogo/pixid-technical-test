@@ -166,8 +166,8 @@ describe('toFormField', () => {
     ['title', 'title'],
     ['compensation.salaryEntries[2].amount', 'compensation.salaryEntries.2.amount'],
     ['location.address.lines[1]', 'location.address.lines'],
-    ['location.address', 'location.address'],
-    ['compensation', 'compensation'],
+    ['location.address', undefined],
+    ['compensation', undefined],
     ['workflow', undefined],
   ])('reads the server field %s as %s', (serverField, formField) => {
     expect(toFormField(serverField)).toBe(formField);

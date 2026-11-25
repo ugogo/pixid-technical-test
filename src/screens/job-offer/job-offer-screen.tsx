@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 
 import {
   DeleteJobOfferButton,
+  isEditable,
   JobOfferDetails,
   JobOfferHistory,
   jobOfferQueries,
   StatusChip,
   TransitionActions,
 } from '@/features/job-offers';
-import { RouterLink } from '@/shared/ui/router-link';
+import { RouterButton, RouterLink } from '@/shared/ui/router-link';
 
 const route = getRouteApi('/job-offers/$jobOfferId');
 
@@ -45,6 +46,15 @@ export function JobOfferScreen() {
             jobOfferId={jobOfferId}
             transitions={transitions.transitions}
           />
+          {isEditable(offer) && (
+            <RouterButton
+              params={{ jobOfferId }}
+              to="/job-offers/$jobOfferId/edit"
+              variant="outlined"
+            >
+              {t('job-offer.edit')}
+            </RouterButton>
+          )}
           {offer.status === 'DRAFT' && <DeleteJobOfferButton jobOfferId={jobOfferId} />}
         </Stack>
       ) : (

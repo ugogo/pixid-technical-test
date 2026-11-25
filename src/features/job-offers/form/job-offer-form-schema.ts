@@ -161,8 +161,9 @@ export function toJobOfferRequest(values: JobOfferFormOutput): JobOfferRequest {
   };
 }
 
+// The fields the form shows; an error on anything else, such as `compensation`, goes to its step.
 const SERVER_FIELD =
-  /^(title|location(\.type|\.address(\.(lines|postalCode|city|region|countryCode))?)?|compensation(\.(salaryEntries|bonusEntries)\.\d+\.(type|amount|currency|description))?)$/;
+  /^(title|location\.type|location\.address\.(lines|postalCode|city|region|countryCode)|compensation\.(salaryEntries|bonusEntries)\.\d+\.(type|amount|currency|description))$/;
 
 /**
  * The form field a server error names: `compensation.salaryEntries[0].amount` becomes

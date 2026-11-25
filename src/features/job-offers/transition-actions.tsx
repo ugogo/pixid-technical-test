@@ -6,6 +6,7 @@ import { errorMessageKey } from '@/shared/api/api-request-error';
 import type { JobOfferStatus, TransitionAction } from '@/shared/api/enums';
 import { isOneOf } from '@/shared/is-one-of';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
+import { RouterLink } from '@/shared/ui/router-link';
 
 import { useTransitionJobOffer } from './api/use-job-offer-mutations';
 import type { Transition } from './job-offer-types';
@@ -89,7 +90,16 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
   return (
     <Stack spacing={2}>
       {!isComplete && transitions.some((transition) => transition.action === 'finalize') && (
-        <Alert severity="info">{t('job-offer.incomplete')}</Alert>
+        <Alert
+          action={
+            <RouterLink params={{ jobOfferId }} to="/job-offers/$jobOfferId/edit">
+              {t('job-offer.incomplete-edit')}
+            </RouterLink>
+          }
+          severity="info"
+        >
+          {t('job-offer.incomplete')}
+        </Alert>
       )}
       <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
         {transitions.map((transition) => (

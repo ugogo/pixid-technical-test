@@ -3,6 +3,9 @@ import { assign, fromPromise, setup } from 'xstate';
 /** A step that holds fields; the review step holds none. */
 export type JobOfferFormStep = 'basicInfo' | 'compensation';
 
+/** The step on screen, kept while the form validates or saves. */
+export type JobOfferFormScreenStep = JobOfferFormStep | 'review';
+
 /** Saving early skips only the rule that a complete offer needs a salary or a bonus. */
 export type SaveMode = 'draft' | 'complete';
 
@@ -17,6 +20,7 @@ interface JobOfferFormTypes {
   input: { canSaveEarly: boolean };
   context: {
     canSaveEarly: boolean;
+    shownStep: JobOfferFormScreenStep;
     saveMode: SaveMode;
     hasSaveFailed: boolean;
     savedJobOfferId?: string;
@@ -27,7 +31,12 @@ interface JobOfferFormTypes {
 // XState reads only the types of these values.
 const types: JobOfferFormTypes = {
   input: { canSaveEarly: false },
-  context: { canSaveEarly: false, saveMode: 'complete', hasSaveFailed: false },
+  context: {
+    canSaveEarly: false,
+    shownStep: 'basicInfo',
+    saveMode: 'complete',
+    hasSaveFailed: false,
+  },
   events: { type: 'NEXT' },
 };
 
@@ -55,6 +64,7 @@ export const jobOfferFormMachine = setup({
   id: 'jobOfferForm',
   context: ({ input }) => ({
     canSaveEarly: input.canSaveEarly,
+    shownStep: 'basicInfo',
     saveMode: 'complete',
     hasSaveFailed: false,
   }),
@@ -71,6 +81,7 @@ export const jobOfferFormMachine = setup({
       },
       states: {
         basicInfo: {
+          entry: assign({ shownStep: 'basicInfo' }),
           initial: 'idle',
           states: {
             idle: { on: { NEXT: 'validating' } },
@@ -91,6 +102,7 @@ export const jobOfferFormMachine = setup({
           },
         },
         compensation: {
+          entry: assign({ shownStep: 'compensation' }),
           initial: 'idle',
           on: { BACK: 'basicInfo' },
           states: {
@@ -109,6 +121,7 @@ export const jobOfferFormMachine = setup({
           },
         },
         review: {
+          entry: assign({ shownStep: 'review' }),
           on: {
             BACK: 'compensation',
             SAVE: {

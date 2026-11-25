@@ -34,7 +34,8 @@
       "created-from": "Created from",
       "created-to": "Created until",
       "reset": "Clear filters"
-    }
+    },
+    "new": "New offer"
   },
   "status": {
     "DRAFT": "Draft",
@@ -81,7 +82,10 @@
       "button": "Delete",
       "title": "Delete this draft?",
       "body": "The offer and its history will be deleted for good."
-    }
+    },
+    "edit": "Edit",
+    "edit-title": "Edit {{title}}",
+    "incomplete-edit": "Complete the offer"
   },
   "transitions": {
     "submit": {
@@ -127,5 +131,58 @@
     "INVALID_STATE": "The offer can no longer be changed in its current status.",
     "INCOMPLETE_OFFER": "Add a salary or a bonus to this offer first.",
     "generic": "The action failed. Try again."
+  },
+  "job-offer-form": {
+    "steps": {
+      "basic-info": "Basic information",
+      "compensation": "Compensation",
+      "review": "Review"
+    },
+    "fields": {
+      "title": "Title",
+      "location": "Location",
+      "company-address": "Company address",
+      "custom-address": "Another address",
+      "address-lines": "Street address",
+      "postal-code": "Postal code",
+      "city": "City",
+      "region": "Region",
+      "country-code": "Country code",
+      "salaries": "Salaries",
+      "bonuses": "Bonuses",
+      "salary-type": "Paid",
+      "bonus-type": "Bonus",
+      "amount": "Amount",
+      "currency": "Currency",
+      "description": "Description"
+    },
+    "add-salary": "Add a salary",
+    "add-bonus": "Add a bonus",
+    "remove-salary": "Remove salary {{number}}",
+    "remove-bonus": "Remove bonus {{number}}",
+    "no-salary": "No salary yet.",
+    "no-bonus": "No bonus yet.",
+    "next": "Next",
+    "back": "Back",
+    "create": "Create the offer",
+    "save": "Save changes",
+    "save-early": "Save and finish later",
+    "save-failed": "The offer could not be saved. Check your connection and try again.",
+    "conflict": "This offer can no longer be edited: its status has changed.",
+    "open-offer": "Open the offer",
+    "leave": {
+      "title": "Leave without saving?",
+      "body": "Your changes to this offer will be lost.",
+      "confirm": "Leave"
+    },
+    "errors": {
+      "required": "Required.",
+      "too-long": "Too long.",
+      "too-many-lines": "At most 3 lines.",
+      "country-code": "Two capital letters, such as FR.",
+      "currency-code": "Three capital letters, such as EUR.",
+      "amount": "A number, 0 or more.",
+      "compensation-required": "Add a salary or a bonus, or save and finish later."
+    }
   }
 }

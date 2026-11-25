@@ -34,7 +34,8 @@
       "created-from": "Créée à partir du",
       "created-to": "Créée jusqu'au",
       "reset": "Effacer les filtres"
-    }
+    },
+    "new": "Nouvelle offre"
   },
   "status": {
     "DRAFT": "Brouillon",
@@ -81,7 +82,10 @@
       "button": "Supprimer",
       "title": "Supprimer ce brouillon ?",
       "body": "L'offre et son historique seront supprimés définitivement."
-    }
+    },
+    "edit": "Modifier",
+    "edit-title": "Modifier {{title}}",
+    "incomplete-edit": "Compléter l'offre"
   },
   "transitions": {
     "submit": {
@@ -127,5 +131,58 @@
     "INVALID_STATE": "L'offre ne peut plus être modifiée dans son statut actuel.",
     "INCOMPLETE_OFFER": "Ajoutez d'abord un salaire ou une prime à cette offre.",
     "generic": "L'action a échoué. Réessayez."
+  },
+  "job-offer-form": {
+    "steps": {
+      "basic-info": "Informations générales",
+      "compensation": "Rémunération",
+      "review": "Vérification"
+    },
+    "fields": {
+      "title": "Intitulé",
+      "location": "Lieu",
+      "company-address": "Adresse de l'entreprise",
+      "custom-address": "Une autre adresse",
+      "address-lines": "Adresse",
+      "postal-code": "Code postal",
+      "city": "Ville",
+      "region": "Région",
+      "country-code": "Code pays",
+      "salaries": "Salaires",
+      "bonuses": "Primes",
+      "salary-type": "Versé",
+      "bonus-type": "Prime",
+      "amount": "Montant",
+      "currency": "Devise",
+      "description": "Description"
+    },
+    "add-salary": "Ajouter un salaire",
+    "add-bonus": "Ajouter une prime",
+    "remove-salary": "Retirer le salaire {{number}}",
+    "remove-bonus": "Retirer la prime {{number}}",
+    "no-salary": "Aucun salaire pour l'instant.",
+    "no-bonus": "Aucune prime pour l'instant.",
+    "next": "Suivant",
+    "back": "Retour",
+    "create": "Créer l'offre",
+    "save": "Enregistrer",
+    "save-early": "Enregistrer et finir plus tard",
+    "save-failed": "L'offre n'a pas pu être enregistrée. Vérifiez votre connexion et réessayez.",
+    "conflict": "Cette offre ne peut plus être modifiée : son statut a changé.",
+    "open-offer": "Ouvrir l'offre",
+    "leave": {
+      "title": "Quitter sans enregistrer ?",
+      "body": "Vos modifications de cette offre seront perdues.",
+      "confirm": "Quitter"
+    },
+    "errors": {
+      "required": "Obligatoire.",
+      "too-long": "Trop long.",
+      "too-many-lines": "3 lignes au plus.",
+      "country-code": "Deux majuscules, comme FR.",
+      "currency-code": "Trois majuscules, comme EUR.",
+      "amount": "Un nombre, 0 ou plus.",
+      "compensation-required": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
+    }
   }
 }

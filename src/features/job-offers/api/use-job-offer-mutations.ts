@@ -4,6 +4,35 @@ import { $api } from '@/shared/api/client';
 
 import { jobOfferQueries } from './job-offer-queries';
 
+/** Creates an offer; the answer goes straight into its detail, which the form opens next. */
+export function useCreateJobOffer() {
+  const queryClient = useQueryClient();
+
+  return $api.useMutation('post', '/job-offers', {
+    onSuccess: (offer) => {
+      queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
+
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+    },
+  });
+}
+
+/** Saves an offer's fields; its transitions are refetched, since completeness changes them. */
+export function useUpdateJobOffer() {
+  const queryClient = useQueryClient();
+
+  return $api.useMutation('put', '/job-offers/{jobOfferId}', {
+    onSuccess: (offer) => {
+      queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
+
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey }),
+        queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() }),
+      ]);
+    },
+  });
+}
+
 /** Moves an offer along its workflow; buttons stay disabled until the next transitions arrive. */
 export function useTransitionJobOffer() {
   const queryClient = useQueryClient();
