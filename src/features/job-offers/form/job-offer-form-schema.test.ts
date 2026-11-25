@@ -164,12 +164,13 @@ describe('toJobOfferFormValues', () => {
 describe('toFormField', () => {
   test.each([
     ['title', 'title'],
-    ['compensation.salaryEntries[2].amount', 'compensation.salaryEntries.2.amount'],
+    ['compensation.salaryEntries[0].amount', 'compensation.salaryEntries.0.amount'],
     ['location.address.lines[1]', 'location.address.lines'],
+    ['compensation.salaryEntries[3].amount', undefined],
     ['location.address', undefined],
     ['compensation', undefined],
     ['workflow', undefined],
   ])('reads the server field %s as %s', (serverField, formField) => {
-    expect(toFormField(serverField)).toBe(formField);
+    expect(toFormField(serverField, customOfferValues)).toBe(formField);
   });
 });

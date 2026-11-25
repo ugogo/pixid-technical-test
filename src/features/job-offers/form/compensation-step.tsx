@@ -1,4 +1,5 @@
 import { Button, Grid, IconButton, MenuItem, Stack, Typography } from '@mui/material';
+import type { ReactNode } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -15,7 +16,6 @@ import {
 /** The offer's salaries and bonuses, each a list the user adds rows to. */
 export function CompensationStep() {
   const { t } = useTranslation();
-  const { clearErrors } = useFormContext<JobOfferFormValues>();
   const salaryEntries = useFieldArray<JobOfferFormValues, 'compensation.salaryEntries'>({
     name: 'compensation.salaryEntries',
   });
@@ -25,10 +25,13 @@ export function CompensationStep() {
 
   return (
     <Stack spacing={4}>
-      <Section title={t('job-offer-form.fields.salaries')}>
-        {salaryEntries.fields.length === 0 && (
-          <Typography color="text.secondary">{t('job-offer-form.no-salary')}</Typography>
-        )}
+      <EntryListSection
+        addLabel={t('job-offer-form.add-salary')}
+        emptyText={t('job-offer-form.no-salary')}
+        isEmpty={salaryEntries.fields.length === 0}
+        onAdd={() => salaryEntries.append(EMPTY_SALARY_ENTRY)}
+        title={t('job-offer-form.fields.salaries')}
+      >
         {salaryEntries.fields.map((salaryEntry, index) => (
           <Grid container key={salaryEntry.id} spacing={2} sx={{ alignItems: 'flex-start' }}>
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -70,20 +73,14 @@ export function CompensationStep() {
             </Grid>
           </Grid>
         ))}
-        <Button
-          onClick={() => {
-            clearErrors('root.compensation');
-            salaryEntries.append(EMPTY_SALARY_ENTRY);
-          }}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          {t('job-offer-form.add-salary')}
-        </Button>
-      </Section>
-      <Section title={t('job-offer-form.fields.bonuses')}>
-        {bonusEntries.fields.length === 0 && (
-          <Typography color="text.secondary">{t('job-offer-form.no-bonus')}</Typography>
-        )}
+      </EntryListSection>
+      <EntryListSection
+        addLabel={t('job-offer-form.add-bonus')}
+        emptyText={t('job-offer-form.no-bonus')}
+        isEmpty={bonusEntries.fields.length === 0}
+        onAdd={() => bonusEntries.append(EMPTY_BONUS_ENTRY)}
+        title={t('job-offer-form.fields.bonuses')}
+      >
         {bonusEntries.fields.map((bonusEntry, index) => (
           <Grid container key={bonusEntry.id} spacing={2} sx={{ alignItems: 'flex-start' }}>
             <Grid size={{ xs: 12, sm: 4 }}>
@@ -131,16 +128,44 @@ export function CompensationStep() {
             </Grid>
           </Grid>
         ))}
-        <Button
-          onClick={() => {
-            clearErrors('root.compensation');
-            bonusEntries.append(EMPTY_BONUS_ENTRY);
-          }}
-          sx={{ alignSelf: 'flex-start' }}
-        >
-          {t('job-offer-form.add-bonus')}
-        </Button>
-      </Section>
+      </EntryListSection>
     </Stack>
+  );
+}
+
+interface EntryListSectionProps {
+  title: string;
+  emptyText: string;
+  addLabel: string;
+  isEmpty: boolean;
+  onAdd: () => void;
+  children: ReactNode;
+}
+
+/** A list of salary or bonus rows, with a button to add one. */
+function EntryListSection({
+  title,
+  emptyText,
+  addLabel,
+  isEmpty,
+  onAdd,
+  children,
+}: EntryListSectionProps) {
+  const { clearErrors } = useFormContext<JobOfferFormValues>();
+
+  return (
+    <Section title={title}>
+      {isEmpty && <Typography color="text.secondary">{emptyText}</Typography>}
+      {children}
+      <Button
+        onClick={() => {
+          clearErrors('root.compensation');
+          onAdd();
+        }}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        {addLabel}
+      </Button>
+    </Section>
   );
 }

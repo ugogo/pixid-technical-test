@@ -166,7 +166,11 @@ export const jobOfferFormMachine = setup({
               event.output.type === 'invalid' && event.output.step === 'basicInfo',
             target: 'editing.basicInfo',
           },
-          { guard: ({ event }) => event.output.type === 'invalid', target: 'editing.compensation' },
+          {
+            guard: ({ event }) =>
+              event.output.type === 'invalid' && event.output.step === 'compensation',
+            target: 'editing.compensation',
+          },
           { guard: ({ event }) => event.output.type === 'conflict', target: 'conflict' },
           { target: 'editing.lastStep', actions: assign({ hasSaveFailed: true }) },
         ],

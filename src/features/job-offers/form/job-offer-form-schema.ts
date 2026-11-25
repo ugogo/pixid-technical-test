@@ -1,4 +1,4 @@
-import type { FieldPath } from 'react-hook-form';
+import { get, type FieldPath } from 'react-hook-form';
 import { z } from 'zod';
 
 import { BONUS_TYPES, SALARY_TYPES } from '@/shared/api/enums';
@@ -6,7 +6,7 @@ import type { components } from '@/shared/api/schema';
 
 import type { JobOffer } from '../job-offer-types';
 
-type JobOfferRequest = components['schemas']['CreateJobOfferRequest'];
+export type JobOfferRequest = components['schemas']['CreateJobOfferRequest'];
 
 /** Each message is a key under `job-offer-form.errors`; a server message shows as it is. */
 export const FORM_ERROR_KEYS = [
@@ -84,13 +84,19 @@ export type JobOfferFormField = FieldPath<JobOfferFormValues>;
 
 const EMPTY_ADDRESS = { lines: '', postalCode: '', city: '', region: '', countryCode: 'FR' };
 
-export const EMPTY_SALARY_ENTRY = { type: 'MONTHLY', amount: '', currency: 'EUR' } as const;
-export const EMPTY_BONUS_ENTRY = {
+type Compensation = JobOfferFormValues['compensation'];
+
+export const EMPTY_SALARY_ENTRY: Compensation['salaryEntries'][number] = {
+  type: 'MONTHLY',
+  amount: '',
+  currency: 'EUR',
+};
+export const EMPTY_BONUS_ENTRY: Compensation['bonusEntries'][number] = {
   type: 'ANNUAL',
   amount: '',
   currency: 'EUR',
   description: '',
-} as const;
+};
 
 /** The form's starting values: an offer's, or empty ones for a new offer. */
 export function toJobOfferFormValues(offer?: JobOffer): JobOfferFormValues {
@@ -161,22 +167,22 @@ export function toJobOfferRequest(values: JobOfferFormOutput): JobOfferRequest {
   };
 }
 
-// The fields the form shows; an error on anything else, such as `compensation`, goes to its step.
-const SERVER_FIELD =
-  /^(title|location\.type|location\.address\.(lines|postalCode|city|region|countryCode)|compensation\.(salaryEntries|bonusEntries)\.\d+\.(type|amount|currency|description))$/;
-
 /**
  * The form field a server error names: `compensation.salaryEntries[0].amount` becomes
  * `compensation.salaryEntries.0.amount`, and an address line becomes the lines field.
  */
-export function toFormField(serverField: string): JobOfferFormField | undefined {
+export function toFormField(
+  serverField: string,
+  values: JobOfferFormValues,
+): JobOfferFormField | undefined {
   const path = serverField
     .replace(/\[(\d+)\]/g, '.$1')
     .replace(/^(location\.address\.lines)\.\d+$/, '$1');
 
-  return isFormField(path) ? path : undefined;
+  return isShownField(path, values) ? path : undefined;
 }
 
-function isFormField(path: string): path is JobOfferFormField {
-  return SERVER_FIELD.test(path);
+/** A field the form shows holds what was typed; `compensation` or `location.address` hold more. */
+function isShownField(path: string, values: JobOfferFormValues): path is JobOfferFormField {
+  return typeof get(values, path) === 'string';
 }

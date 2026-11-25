@@ -7,7 +7,7 @@ import {
   RadioGroup,
   Stack,
 } from '@mui/material';
-import { useController, useWatch } from 'react-hook-form';
+import { useController } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { FormTextField } from './form-text-field';
@@ -19,7 +19,6 @@ export function BasicInfoStep() {
   const { field: locationTypeField } = useController<JobOfferFormValues, 'location.type'>({
     name: 'location.type',
   });
-  const locationType = useWatch<JobOfferFormValues, 'location.type'>({ name: 'location.type' });
 
   return (
     <Stack spacing={3}>
@@ -39,7 +38,7 @@ export function BasicInfoStep() {
           />
         </RadioGroup>
       </FormControl>
-      {locationType === 'CUSTOM' && (
+      {locationTypeField.value === 'CUSTOM' && (
         <Grid container spacing={2}>
           <Grid size={12}>
             <FormTextField

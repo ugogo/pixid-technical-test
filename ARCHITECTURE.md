@@ -133,7 +133,7 @@ saving ──saved─────▶ saved (final): the form opens the offer
 - **Amounts** are held as typed: an empty field is missing, not 0, and the schema reads them as numbers.
 - **Location**: a union on `location.type`. Switching to `COMPANY_ADDRESS` keeps the typed address in the values, unchecked, in case the user switches back; `toJobOfferRequest` drops it when sending, along with empty optional fields.
 - **Address lines** are one multiline field, at most 3 lines, split when sending.
-- **Validation mode**: `onTouched`, so no error shows before the user leaves a field. A step's first invalid field takes the focus.
+- **Validation mode**: `onBlur`, so no error shows before the user leaves a field. Not `onTouched`, which validates a whole salary or bonus list when a row is added, the new empty row included. A step's first invalid field takes the focus.
 
 ## List
 

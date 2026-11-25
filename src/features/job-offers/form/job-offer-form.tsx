@@ -6,10 +6,8 @@ import { useState } from 'react';
 import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { fromPromise } from 'xstate';
-import { z } from 'zod';
 
 import { ApiRequestError } from '@/shared/api/api-request-error';
-import type { components } from '@/shared/api/schema';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { RouterLink } from '@/shared/ui/router-link';
 
@@ -32,17 +30,13 @@ import {
   toJobOfferRequest,
   type JobOfferFormOutput,
   type JobOfferFormValues,
+  type JobOfferRequest,
 } from './job-offer-form-schema';
 
-type JobOfferRequest = components['schemas']['CreateJobOfferRequest'];
 type JobOfferForm = UseFormReturn<JobOfferFormValues, unknown, JobOfferFormOutput>;
 
 const SCREEN_STEPS: JobOfferFormScreenStep[] = ['basicInfo', 'compensation', 'review'];
 const STEP_FIELDS = { basicInfo: ['title', 'location'], compensation: ['compensation'] } as const;
-
-const validationErrorBodySchema = z.object({
-  fieldErrors: z.array(z.object({ field: z.string(), message: z.string() })),
-});
 
 /** The step that shows a server field: compensation entries, or the basic information. */
 function stepOfServerField(serverField: string): JobOfferFormStep {
@@ -50,31 +44,29 @@ function stepOfServerField(serverField: string): JobOfferFormStep {
 }
 
 /**
- * Reads a failed save: a 422's field errors go onto their fields (or, for a field the form does
- * not show, to the top of its step), and the form lands on the first step holding one.
+ * Puts a failed save's field errors on the form: on their fields, or, for a field the form does
+ * not show, at the top of its step. Says where the form goes next.
  */
-function toSaveOutcome(error: unknown, jobOfferForm: JobOfferForm): SaveOutcome {
+function applySaveError(error: unknown, jobOfferForm: JobOfferForm): SaveOutcome {
   if (!(error instanceof ApiRequestError)) return { type: 'failed' };
   if (error.status === 409) return { type: 'conflict' };
+  if (error.status !== 422 || error.fieldErrors.length === 0) return { type: 'failed' };
 
-  const fieldErrors = validationErrorBodySchema.safeParse(error.body).data?.fieldErrors;
+  const values = jobOfferForm.getValues();
+  const stepsWithErrors = error.fieldErrors.map(({ field, message }) => {
+    const step = stepOfServerField(field);
 
-  if (error.status !== 422 || !fieldErrors?.length) return { type: 'failed' };
-
-  for (const { field, message } of fieldErrors) {
-    const formField = toFormField(field);
-
-    jobOfferForm.setError(formField ?? `root.${stepOfServerField(field)}`, {
+    jobOfferForm.setError(toFormField(field, values) ?? `root.${step}`, {
       type: 'server',
       message,
     });
-  }
+
+    return step;
+  });
 
   return {
     type: 'invalid',
-    step: fieldErrors.some(({ field }) => stepOfServerField(field) === 'basicInfo')
-      ? 'basicInfo'
-      : 'compensation',
+    step: stepsWithErrors.includes('basicInfo') ? 'basicInfo' : 'compensation',
   };
 }
 
@@ -93,7 +85,8 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   const formErrorText = useFormErrorText();
   const jobOfferForm = useForm<JobOfferFormValues, unknown, JobOfferFormOutput>({
     defaultValues: toJobOfferFormValues(offer),
-    mode: 'onTouched',
+    // Not `onTouched`: it validates a whole salary or bonus list when a row is added, new row included.
+    mode: 'onBlur',
     resolver: zodResolver(jobOfferFormSchema),
   });
   const { clearErrors, formState, getValues, setError, trigger } = jobOfferForm;
@@ -129,7 +122,7 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
 
             return { type: 'saved', jobOfferId: saved.id };
           } catch (error) {
-            return toSaveOutcome(error, jobOfferForm);
+            return applySaveError(error, jobOfferForm);
           }
         }),
       },
