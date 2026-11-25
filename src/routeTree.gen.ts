@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as JobOffersIndexRouteImport } from './routes/job-offers/index'
+import { Route as JobOffersJobOfferIdRouteImport } from './routes/job-offers/$jobOfferId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,30 +23,39 @@ const JobOffersIndexRoute = JobOffersIndexRouteImport.update({
   path: '/job-offers/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const JobOffersJobOfferIdRoute = JobOffersJobOfferIdRouteImport.update({
+  id: '/job-offers/$jobOfferId',
+  path: '/job-offers/$jobOfferId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers/': typeof JobOffersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers': typeof JobOffersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers/': typeof JobOffersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/job-offers/'
+  fullPaths: '/' | '/job-offers/$jobOfferId' | '/job-offers/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/job-offers'
-  id: '__root__' | '/' | '/job-offers/'
+  to: '/' | '/job-offers/$jobOfferId' | '/job-offers'
+  id: '__root__' | '/' | '/job-offers/$jobOfferId' | '/job-offers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  JobOffersJobOfferIdRoute: typeof JobOffersJobOfferIdRoute
   JobOffersIndexRoute: typeof JobOffersIndexRoute
 }
 
@@ -65,11 +75,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JobOffersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/job-offers/$jobOfferId': {
+      id: '/job-offers/$jobOfferId'
+      path: '/job-offers/$jobOfferId'
+      fullPath: '/job-offers/$jobOfferId'
+      preLoaderRoute: typeof JobOffersJobOfferIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  JobOffersJobOfferIdRoute: JobOffersJobOfferIdRoute,
   JobOffersIndexRoute: JobOffersIndexRoute,
 }
 export const routeTree = rootRouteImport

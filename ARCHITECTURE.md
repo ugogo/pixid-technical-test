@@ -2,23 +2,23 @@
 
 A React 19 + MUI app to manage job offers through a per-company workflow, against a mocked API built from `job-offer-swagger.yml`.
 
-**Built so far**: the scaffold, the mock API and the list. The sections marked _planned_ describe the target for the detail, form and settings screens, and change as they land.
+**Built so far**: the scaffold, the mock API, the list and the detail. The sections marked _planned_ describe the target for the form and settings screens, and change as they land.
 
 ## Stack
 
-| Need            | Choice                                 | Why                                                                                                                                                                                     |
-| --------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Build           | Vite + TypeScript (strict)             | Fast dev server, no framework the brief does not need                                                                                                                                   |
-| UI              | MUI                                    | Imposed by the brief                                                                                                                                                                    |
-| Routing         | TanStack Router                        | Typed routes and search params: filters, sort and page live in the URL, validated; routes are code-split                                                                                |
-| Server state    | TanStack Query                         | Cache, loading and error states, invalidation after a write                                                                                                                             |
-| API client      | `openapi-typescript` + `openapi-fetch` | Types generated from the swagger; a dozen hooks written by hand stay readable                                                                                                           |
-| Forms           | react-hook-form + zod                  | Mature MUI integration (`Controller`) and `setError` on nested paths, which the 422 mapping relies on. TanStack Form would match the suite; it is the first thing to try with more time |
-| Form flow       | XState v5                              | Steps, saving and failures as explicit states: an impossible combination cannot exist                                                                                                   |
-| Mock API        | MSW                                    | The same handlers serve the browser and the tests                                                                                                                                       |
-| i18n            | react-i18next                          | French and English, switchable at runtime                                                                                                                                               |
-| Tests           | Vitest + Testing Library + MSW         | Same config as Vite; screens tested against the real handlers                                                                                                                           |
-| Lint and format | oxlint + oxfmt                         | Fast, one config each; oxlint runs the React, jsx-a11y and Vitest plugins                                                                                                               |
+| Need            | Choice                                                         | Why                                                                                                                                                                                     |
+| --------------- | -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Build           | Vite + TypeScript (strict)                                     | Fast dev server, no framework the brief does not need                                                                                                                                   |
+| UI              | MUI                                                            | Imposed by the brief                                                                                                                                                                    |
+| Routing         | TanStack Router                                                | Typed routes and search params: filters, sort and page live in the URL, validated; routes are code-split                                                                                |
+| Server state    | TanStack Query                                                 | Cache, loading and error states, invalidation after a write                                                                                                                             |
+| API client      | `openapi-typescript` + `openapi-fetch` + `openapi-react-query` | Types generated from the swagger, and query options and mutation hooks typed from them: no request is typed or unwrapped by hand                                                        |
+| Forms           | react-hook-form + zod                                          | Mature MUI integration (`Controller`) and `setError` on nested paths, which the 422 mapping relies on. TanStack Form would match the suite; it is the first thing to try with more time |
+| Form flow       | XState v5                                                      | Steps, saving and failures as explicit states: an impossible combination cannot exist                                                                                                   |
+| Mock API        | MSW                                                            | The same handlers serve the browser and the tests                                                                                                                                       |
+| i18n            | react-i18next                                                  | French and English, switchable at runtime                                                                                                                                               |
+| Tests           | Vitest + Testing Library + MSW                                 | Same config as Vite; screens tested against the real handlers                                                                                                                           |
+| Lint and format | oxlint + oxfmt                                                 | Fast, one config each; oxlint runs the React, jsx-a11y and Vitest plugins                                                                                                               |
 
 No global store: the URL holds the UI state that must survive a reload or a shared link, Query holds the server state, and a component holds the rest.
 
@@ -40,7 +40,7 @@ src/
 │   ├── job-offers/         API hooks, StatusChip, TransitionActions, JobOfferForm, form schema
 │   └── company-settings/   API hooks, WorkflowSettingsForm
 ├── shared/
-│   ├── api/                openapi-fetch client, generated types and enum values
+│   ├── api/                openapi-fetch client and its TanStack Query bindings, generated types, enum values
 │   ├── ui/                 presentational pieces over MUI (page layout, skeletons)
 │   ├── i18n/               setup, language switcher, `fr.json`, `en.json`
 │   ├── is-one-of.ts        narrows a value to one of a list
@@ -56,35 +56,28 @@ src/
 
 ## Data
 
-- **Query keys**: one `as const` factory per feature, nested so one invalidation reaches everything below it. No key is written inline.
-
-  ```ts
-  jobOfferKeys.all; // ['job-offers']
-  jobOfferKeys.lists(); // ['job-offers', 'list']
-  jobOfferKeys.list(filters); // ['job-offers', 'list', filters]
-  jobOfferKeys.detail(id); // ['job-offers', 'detail', id]
-  jobOfferKeys.transitions(id); // ['job-offers', 'detail', id, 'transitions']
-  jobOfferKeys.history(id); // ['job-offers', 'detail', id, 'history']
-  companySettingsKeys.configuration(companyId);
-  ```
-
-- **Reads**: one Query hook per endpoint, keyed through the factory. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
-- **Writes** _(planned)_: a mutation hook per endpoint. A transition or an update invalidates `detail(id)` (the offer, its transitions and its history) and `lists()`. A delete removes `detail(id)` from the cache instead, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
+- **Queries from the swagger**: `openapi-react-query` turns the typed client into TanStack Query options (`$api.queryOptions('get', '/job-offers/{jobOfferId}', init)`) and mutation hooks (`$api.useMutation('post', path)`). Their data is typed from the swagger and never `undefined`, so no query function is written by hand.
+- **Errors**: openapi-fetch resolves an error status instead of throwing. A client middleware throws an `ApiRequestError` that keeps the status and the API's error body, which the retry rule and the error messages read. The library types errors as the API's error body, so code reads them through `instanceof ApiRequestError`, never through that type.
+- **Query keys**: the library's own, `[method, path, init]`, read from the options rather than written inline. A feature's query file is the one place that builds them (`jobOfferQueries.detail(id).queryKey`); `jobOfferQueries.lists()` is `['get', '/job-offers']`, the prefix every list shares.
+- **Reads**: the screen passes `jobOfferQueries.detail(id)`, `.transitions(id)` and `.history(id)` to `useQuery`. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
+- **Writes**: a mutation hook per endpoint (transition and delete so far; create, update and settings come with their screens). A transition answers with the updated offer, which goes straight into the detail; its transitions, its history and every list are refetched, one invalidation per endpoint since the keys are not nested. A delete removes the detail from the cache, so a mounted detail does not refetch a 404, and invalidates the lists. A create invalidates the lists.
 - **Not optimistic**: a write changes several queries at once (the offer, its transitions, its history, its place in the list) and the server can refuse it (409, 422). Waiting for the answer keeps the screen truthful for a delay of a few hundred milliseconds.
 - **Retries and failures**: a query retries once on a network failure or a 5xx, never on a 4xx. A failed first load throws to the route's error boundary; a failed refetch keeps the data on screen.
 - **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request; the client's types leave the header out of each call. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
 - **Types**: `pnpm api:types` regenerates `shared/api/schema.ts` from the swagger, with each enum as a list of values (`--enum-values`) that the UI and the mock iterate through `shared/api/enums.ts`. Nothing is hand-typed for the wire.
 
-## Workflow and transitions _(planned)_
+## Workflow and transitions
 
 The server decides which transitions exist; the UI never recomputes the state machine.
 
 - The detail screen reads `GET /job-offers/{id}/transitions`: each transition names its action, its target status and whether it needs a reason.
-- **Labels** are keyed on the action and its target, since an action can lead to different statuses: `submit` to `TO_APPROVE` is "Submit for approval", `submit` to `PUBLISHED` is "Publish". A key without a target (`transitions.withdraw`) covers an action that always lands in the same status.
+- **Labels** are keyed on the action and its target (`transitions.submit.TO_APPROVE`), since an action can lead to different statuses: `submit` to `TO_APPROVE` is "Submit for approval", `submit` to `PUBLISHED` is "Publish".
 - **Reason**: a transition with `requiresReason` opens a dialog for it (today, `reject`).
 - **Confirmation**: `withdraw` and `close` ask before running. That list is a UI choice, not the server's.
 - **Completeness**: while `isComplete` is false, `finalize` is disabled, with a link to the edit screen.
-- Edit and Delete are not transitions. The UI shows them in the statuses the swagger allows (Edit in `DRAFT` and `TO_FINALIZE`, Delete in `DRAFT`); the server's 409 stays the authority.
+- **Outcome**: a snackbar says where the offer went, or why the server refused, from the swagger's error code.
+- Edit and Delete are not transitions. The UI shows them in the statuses the swagger allows (Edit in `DRAFT` and `TO_FINALIZE`, with the form; Delete in `DRAFT`, after a confirmation); the server's 409 stays the authority.
+- **A missing offer** (a 404) shows as a missing page with a link back, not as a failure to retry: the detail route's `errorComponent` renders the same `NotFound` as an unknown URL.
 
 ## Forms _(planned)_
 

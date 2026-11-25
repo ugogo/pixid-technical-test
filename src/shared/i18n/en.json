@@ -10,7 +10,9 @@
       "title": "Something went wrong",
       "retry": "Try again"
     },
-    "not-found": "This page does not exist."
+    "not-found": "This page does not exist.",
+    "cancel": "Cancel",
+    "back-to-list": "Back to job offers"
   },
   "job-offers": {
     "list": {
@@ -41,5 +43,89 @@
     "TO_POST": "To post",
     "PUBLISHED": "Published",
     "CLOSED": "Closed"
+  },
+  "salary-types": {
+    "HOURLY": "per hour",
+    "DAILY": "per day",
+    "MONTHLY": "per month",
+    "YEARLY": "per year"
+  },
+  "bonus-types": {
+    "SIGNING": "Signing bonus",
+    "PERFORMANCE": "Performance bonus",
+    "ANNUAL": "Annual bonus",
+    "OTHER": "Other bonus"
+  },
+  "job-offer": {
+    "sections": {
+      "location": "Location",
+      "compensation": "Compensation",
+      "dates": "Dates",
+      "history": "History"
+    },
+    "no-compensation": "No salary or bonus yet.",
+    "dates": {
+      "created-at": "Created",
+      "updated-at": "Updated",
+      "published-at": "Published",
+      "closed-at": "Closed"
+    },
+    "history": {
+      "empty": "No status change yet.",
+      "change": "{{from}} → {{to}}",
+      "by": "{{date}} · {{user}}",
+      "reason": "Reason: {{reason}}"
+    },
+    "incomplete": "Add a salary or a bonus to this offer before finalizing it.",
+    "delete": {
+      "button": "Delete",
+      "title": "Delete this draft?",
+      "body": "The offer and its history will be deleted for good."
+    }
+  },
+  "transitions": {
+    "submit": {
+      "TO_FINALIZE": "Save as incomplete",
+      "TO_APPROVE": "Submit for approval",
+      "TO_POST": "Submit for posting",
+      "PUBLISHED": "Publish"
+    },
+    "finalize": {
+      "TO_APPROVE": "Finalize and submit for approval",
+      "TO_POST": "Finalize and submit for posting",
+      "PUBLISHED": "Finalize and publish"
+    },
+    "approve": {
+      "TO_POST": "Approve",
+      "PUBLISHED": "Approve and publish"
+    },
+    "reject": {
+      "DRAFT": "Reject"
+    },
+    "post": {
+      "PUBLISHED": "Post"
+    },
+    "close": {
+      "CLOSED": "Close"
+    },
+    "reopen": {
+      "PUBLISHED": "Reopen"
+    },
+    "withdraw": {
+      "DRAFT": "Withdraw to draft"
+    },
+    "reason": "Reason",
+    "confirm": {
+      "title": "{{action}}?",
+      "withdraw": "The offer goes back to draft and must go through its workflow again.",
+      "close": "The offer stops accepting applications. It can be reopened later."
+    },
+    "done": "Status changed to {{status}}."
+  },
+  "errors": {
+    "INVALID_TRANSITION": "This action is no longer available: the offer has changed. Reload to see it.",
+    "INVALID_STATE": "The offer can no longer be changed in its current status.",
+    "INCOMPLETE_OFFER": "Add a salary or a bonus to this offer first.",
+    "generic": "The action failed. Try again."
   }
 }
