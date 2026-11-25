@@ -1,4 +1,6 @@
+import { TRANSITION_ACTIONS, type JobOfferSort, type JobOfferStatus } from '@/shared/api/enums';
 import type { components, operations } from '@/shared/api/schema';
+import { isOneOf } from '@/shared/is-one-of';
 
 import { ApiError, badRequest, notFound, validationFailed } from './api-error';
 import {
@@ -7,32 +9,18 @@ import {
   type FieldError,
   type JobOfferContent,
 } from './validation';
-import {
-  availableTransitions,
-  isTransitionAction,
-  type JobOfferStatus,
-  type WorkflowConfiguration,
-} from './workflow';
+import { availableTransitions, type WorkflowConfiguration } from './workflow';
 
 type Schemas = components['schemas'];
 type JobOffer = Schemas['JobOffer'];
 type CompanyConfiguration = Schemas['CompanyConfiguration'];
 type TransitionHistoryEntry = Schemas['TransitionHistoryEntry'];
 
-export type SortOption = NonNullable<
-  NonNullable<operations['listJobOffers']['parameters']['query']>['sort']
->;
+type ApiListQuery = NonNullable<operations['listJobOffers']['parameters']['query']>;
 
-export interface ListQuery {
-  page: number;
-  size: number;
-  sort: SortOption;
-  statuses: JobOfferStatus[];
-  titleContains?: string;
-  locationCity?: string;
-  createdAfter?: string;
-  createdBefore?: string;
-}
+/** The swagger's list query, with its defaults applied by the handler. */
+export type ListQuery = Omit<ApiListQuery, 'page' | 'size' | 'sort' | 'status'> &
+  Required<Pick<ApiListQuery, 'page' | 'size' | 'sort' | 'status'>>;
 
 /** An offer as the server keeps it: the workflow it was created with, and its audit log. */
 interface StoredJobOffer extends JobOfferContent {
@@ -73,7 +61,7 @@ function includesIgnoringCase(value: string | null, search: string) {
 const SORT_FIELDS = ['createdAt', 'updatedAt', 'title', 'publishedAt'] as const;
 
 /** Sorts on the stored offer; an unpublished offer sorts last either way, ties by id. */
-function compareOffers(sort: SortOption) {
+function compareOffers(sort: JobOfferSort) {
   const field = SORT_FIELDS.find((candidate) => sort.endsWith(candidate)) ?? 'createdAt';
   const direction = sort.startsWith('-') ? -1 : 1;
 
@@ -190,7 +178,7 @@ export function createMockStore({
     listJobOffers(companyId: string, query: ListQuery): Schemas['JobOfferPage'] {
       const matching = [...offers.values()]
         .filter((offer) => offer.companyId === companyId)
-        .filter((offer) => query.statuses.length === 0 || query.statuses.includes(offer.status))
+        .filter((offer) => query.status.length === 0 || query.status.includes(offer.status))
         .filter(
           (offer) => !query.titleContains || includesIgnoringCase(offer.title, query.titleContains),
         )
@@ -307,7 +295,8 @@ export function createMockStore({
     ): JobOffer {
       const offer = find(companyId, jobOfferId);
 
-      if (!isTransitionAction(action)) throw badRequest(`Unknown transition action: '${action}'`);
+      if (!isOneOf(TRANSITION_ACTIONS, action))
+        throw badRequest(`Unknown transition action: '${action}'`);
 
       const transitions = transitionsOf(offer);
       const transition = transitions.find((candidate) => candidate.action === action);

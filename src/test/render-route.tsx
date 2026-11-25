@@ -8,6 +8,7 @@ import { createAppRouter } from '@/app/router';
 /** Renders the whole app at `path`, with a fresh cache, as a user would land on it. */
 export async function renderRoute(path: string) {
   const queryClient = createQueryClient();
+  queryClient.setQueryDefaults([], { retryDelay: 0 });
   const router = createAppRouter(queryClient, createMemoryHistory({ initialEntries: [path] }));
   await router.load();
 

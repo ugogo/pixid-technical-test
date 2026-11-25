@@ -978,3 +978,17 @@ export interface operations {
         };
     };
 }
+type FlattenedDeepRequired<T> = {
+    [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
+};
+type ReadonlyArray<T> = [
+    Exclude<T, undefined>
+] extends [
+    unknown[]
+] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const pathsJobOffersGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/job-offers"]["get"]["parameters"]["query"]["sort"]> = ["createdAt", "-createdAt", "updatedAt", "-updatedAt", "title", "-title", "publishedAt", "-publishedAt"];
+export const jobOfferStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["JobOfferStatus"]> = ["DRAFT", "TO_FINALIZE", "TO_APPROVE", "TO_POST", "PUBLISHED", "CLOSED"];
+export const transitionActionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TransitionAction"]> = ["submit", "finalize", "approve", "reject", "post", "close", "reopen", "withdraw"];
+export const locationTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LocationType"]> = ["COMPANY_ADDRESS", "CUSTOM"];
+export const salaryTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SalaryType"]> = ["HOURLY", "DAILY", "MONTHLY", "YEARLY"];
+export const bonusTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["BonusType"]> = ["SIGNING", "PERFORMANCE", "ANNUAL", "OTHER"];

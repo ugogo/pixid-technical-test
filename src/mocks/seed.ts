@@ -1,9 +1,10 @@
 import type { components } from '@/shared/api/schema';
 
 import { CURRENT_COMPANY_ID } from '@/shared/api/current-company';
+import type { TransitionAction } from '@/shared/api/enums';
 
 import { createMockStore, type MockStore } from './store';
-import type { TransitionAction, WorkflowConfiguration } from './workflow';
+import type { WorkflowConfiguration } from './workflow';
 
 type Compensation = components['schemas']['Compensation'];
 type Location = components['schemas']['Location'];

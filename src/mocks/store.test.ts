@@ -39,7 +39,7 @@ function refusal(run: () => unknown): ApiError {
   throw new Error('Expected the store to refuse');
 }
 
-const query: ListQuery = { page: 0, size: 20, sort: '-createdAt', statuses: [] };
+const query: ListQuery = { page: 0, size: 20, sort: '-createdAt', status: [] };
 
 describe('workflow', () => {
   test('a complete offer is created in DRAFT and goes through every configured step', () => {
@@ -302,7 +302,7 @@ describe('listJobOffers', () => {
 
     expect(titles(store, { titleContains: 'CARISTE' })).toEqual(['Cariste de nuit', 'Cariste']);
     expect(titles(store, { locationCity: 'lyon' })).toEqual(['Cariste']);
-    expect(titles(store, { statuses: ['PUBLISHED'] })).toEqual([]);
+    expect(titles(store, { status: ['PUBLISHED'] })).toEqual([]);
   });
 
   test('createdAfter is inclusive, createdBefore exclusive', () => {

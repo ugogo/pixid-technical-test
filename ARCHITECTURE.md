@@ -2,7 +2,7 @@
 
 A React 19 + MUI app to manage job offers through a per-company workflow, against a mocked API built from `job-offer-swagger.yml`.
 
-**Built so far**: the scaffold and the mock API. The sections marked _planned_ describe the target for the hooks, screens and form, and change as they land.
+**Built so far**: the scaffold, the mock API and the list. The sections marked _planned_ describe the target for the detail, form and settings screens, and change as they land.
 
 ## Stack
 
@@ -40,9 +40,10 @@ src/
 │   ├── job-offers/         API hooks, StatusChip, TransitionActions, JobOfferForm, form schema
 │   └── company-settings/   API hooks, WorkflowSettingsForm
 ├── shared/
-│   ├── api/                openapi-fetch client, generated types
+│   ├── api/                openapi-fetch client, generated types and enum values
 │   ├── ui/                 presentational pieces over MUI (page layout, skeletons)
-│   └── i18n/               setup, language switcher, `fr.json`, `en.json`
+│   ├── i18n/               setup, language switcher, `fr.json`, `en.json`
+│   └── is-one-of.ts        narrows a value to one of a list
 ├── mocks/                  MSW: handlers, in-memory store, seed; only `main.tsx` and the tests import it
 └── test/                   test setup and render helpers
 ```
@@ -52,7 +53,7 @@ src/
 - **A feature exports blocks, never a page**: a screen imports `@/features/job-offers`, never a file inside it.
 - **`shared/` holds no domain logic**: the generated API types and the translation files name job offers, but no component or function in it does.
 
-## Data _(planned)_
+## Data
 
 - **Query keys**: one `as const` factory per feature, nested so one invalidation reaches everything below it. No key is written inline.
 
@@ -67,11 +68,11 @@ src/
   ```
 
 - **Reads**: one Query hook per endpoint, keyed through the factory. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
-- **Writes**: a mutation hook per endpoint. A transition or an update invalidates `detail(id)` (the offer, its transitions and its history) and `lists()`. A delete removes `detail(id)` from the cache instead, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
+- **Writes** _(planned)_: a mutation hook per endpoint. A transition or an update invalidates `detail(id)` (the offer, its transitions and its history) and `lists()`. A delete removes `detail(id)` from the cache instead, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
 - **Not optimistic**: a write changes several queries at once (the offer, its transitions, its history, its place in the list) and the server can refuse it (409, 422). Waiting for the answer keeps the screen truthful for a delay of a few hundred milliseconds.
-- **Retries**: a query retries once on a network failure or a 5xx, never on a 4xx.
-- **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
-- **Types**: `pnpm api:types` regenerates `shared/api/schema.d.ts` from the swagger. Nothing else is hand-typed for the wire.
+- **Retries and failures**: a query retries once on a network failure or a 5xx, never on a 4xx. A failed first load throws to the route's error boundary; a failed refetch keeps the data on screen.
+- **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request; the client's types leave the header out of each call. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
+- **Types**: `pnpm api:types` regenerates `shared/api/schema.ts` from the swagger, with each enum as a list of values (`--enum-values`) that the UI and the mock iterate through `shared/api/enums.ts`. Nothing is hand-typed for the wire.
 
 ## Workflow and transitions _(planned)_
 
@@ -131,10 +132,10 @@ saving ──done──────▶ saved: navigate to the detail
 - **Location**: a union on `location.type`. Switching to `COMPANY_ADDRESS` keeps the typed address in the values, in case the user switches back; `toJobOfferRequest` drops it when sending.
 - **Validation mode**: `onTouched`, so no error shows before the user leaves a field.
 
-## List _(planned)_
+## List
 
-- **Search params mirror the API's query** (`page` from 0, `sort` as `-createdAt`), validated by the route, so nothing maps between the URL and the request.
-- **Title search** reaches the URL 300 ms after the last keystroke.
+- **Search params mirror the API's query** (`page` from 0, `sort` as `-createdAt`, `status` as a list), validated by a zod schema on the route. Two exceptions: `createdFrom` and `createdTo` hold days, not instants. A value the URL cannot hold falls back to its default, and defaults stay out of the URL.
+- **Text filters** (title, city) reach the URL 300 ms after the last keystroke. Each filter, sort or page change is a history entry, so Back undoes it, and a filter change returns to the first page.
 - **Dates**: a "from" day becomes `createdAfter` at its start (inclusive); a "to" day becomes `createdBefore` at the start of the next day (exclusive), so the "to" day is included.
 - **A company address** has no city in the list (`locationCity` is `null`) and shows as "Company address".
 
@@ -182,7 +183,7 @@ The swagger leaves some behaviours unstated. A mock must answer one way, so the 
 ## Loading and errors
 
 - A screen shows a skeleton of its own layout on its first load; the list then keeps its rows while a filter or a page change loads.
-- A route's `errorComponent` catches what a screen throws; the root one catches the rest. Its retry resets the failed queries before rendering the route again _(planned: today it resets the route only)_.
+- A route's `errorComponent` catches what a screen throws; the root one catches the rest. Its retry resets the failed queries and loads the route again.
 - A failed write shows its message where it was triggered: on the field, at the top of the step, or in a snackbar for a transition.
 
 ## Tests
@@ -196,7 +197,7 @@ A behaviour is proved once, in the layer that owns it.
 | Mock store and handlers                | The state machine under each configuration, since every screen test relies on it                 |
 | Screens, through Testing Library + MSW | What a user does: filter the list, walk the form and its errors, run a transition, save settings |
 
-No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/` over all of `src/` except generated files, the entry point and test helpers; the mock counts, since its rules are code the screens depend on. The target is 80 %.
+No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/` over all of `src/` except generated files, the entry point and test helpers; the mock counts, since its rules are code the screens depend on. `vite.config.ts` fails the run under 80 %.
 
 ## Conventions
 

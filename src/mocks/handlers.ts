@@ -1,12 +1,13 @@
 import { delay, http, HttpResponse, type PathParams } from 'msw';
 
 import { API_BASE_URL } from '@/shared/api/client';
+import { JOB_OFFER_SORTS, JOB_OFFER_STATUSES } from '@/shared/api/enums';
+import { isOneOf } from '@/shared/is-one-of';
 
 import { ApiError, badRequest } from './api-error';
 import { createSeededStore } from './seed';
-import type { ListQuery, SortOption } from './store';
+import type { ListQuery } from './store';
 import { isRecord } from './validation';
-import type { JobOfferStatus } from './workflow';
 
 let store = createSeededStore();
 
@@ -14,25 +15,6 @@ let store = createSeededStore();
 export function resetMockStore() {
   store = createSeededStore();
 }
-
-const STATUSES: JobOfferStatus[] = [
-  'DRAFT',
-  'TO_FINALIZE',
-  'TO_APPROVE',
-  'TO_POST',
-  'PUBLISHED',
-  'CLOSED',
-];
-const SORT_OPTIONS: SortOption[] = [
-  'createdAt',
-  '-createdAt',
-  'updatedAt',
-  '-updatedAt',
-  'title',
-  '-title',
-  'publishedAt',
-  '-publishedAt',
-];
 
 function invalidParameter(name: string, value: string) {
   return badRequest(`Invalid ${name} parameter: '${value}'`);
@@ -77,18 +59,18 @@ function dateParameter(params: URLSearchParams, name: string) {
 function parseListQuery(url: URL): ListQuery {
   const params = url.searchParams;
   const sortValue = params.get('sort') ?? '-createdAt';
-  const sort = SORT_OPTIONS.find((option) => option === sortValue);
-  const statuses = params.getAll('status');
-  const invalidStatus = statuses.find((status) => !STATUSES.some((known) => known === status));
 
-  if (!sort) throw invalidParameter('sort', sortValue);
+  const statuses = params.getAll('status');
+  const invalidStatus = statuses.find((status) => !isOneOf(JOB_OFFER_STATUSES, status));
+
+  if (!isOneOf(JOB_OFFER_SORTS, sortValue)) throw invalidParameter('sort', sortValue);
   if (invalidStatus !== undefined) throw invalidParameter('status', invalidStatus);
 
   return {
     page: integerParameter(params, 'page', 0, 0, Number.MAX_SAFE_INTEGER),
     size: integerParameter(params, 'size', 20, 1, 100),
-    sort,
-    statuses: STATUSES.filter((status) => statuses.includes(status)),
+    sort: sortValue,
+    status: JOB_OFFER_STATUSES.filter((status) => statuses.includes(status)),
     titleContains: textParameter(params, 'titleContains'),
     locationCity: textParameter(params, 'locationCity'),
     createdAfter: dateParameter(params, 'createdAfter'),
