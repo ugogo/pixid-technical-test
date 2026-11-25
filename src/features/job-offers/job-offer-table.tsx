@@ -116,6 +116,15 @@ export function JobOfferTable({ page, search, isUpdating, onChange }: JobOfferTa
       <TablePagination
         component="div"
         count={page?.totalElements ?? 0}
+        labelDisplayedRows={({ from, to, count }) =>
+          t('job-offers.list.displayed-rows', {
+            from,
+            to,
+            count,
+            page: search.page + 1,
+            pageCount: Math.max(Math.ceil(count / search.size), 1),
+          })
+        }
         onPageChange={(_event, nextPage) => onChange({ page: nextPage })}
         onRowsPerPageChange={(event) => {
           const size = Number(event.target.value);

@@ -43,3 +43,24 @@ test('typing back to the current value reports nothing', () => {
 
   expect(onChange).not.toHaveBeenCalled();
 });
+
+test('leaving the field reports what was typed at once, and only once', () => {
+  const { input, onChange } = renderField('');
+
+  fireEvent.change(input, { target: { value: 'tech' } });
+  fireEvent.blur(input);
+  expect(onChange).toHaveBeenCalledExactlyOnceWith('tech');
+
+  act(() => vi.advanceTimersByTime(300));
+  expect(onChange).toHaveBeenCalledOnce();
+});
+
+test('typing again the value a reset removed reports it', () => {
+  const { input, onChange, rerender } = renderField('tech');
+
+  rerender(<DebouncedTextField label="Title" onChange={onChange} value="" />);
+  fireEvent.change(input, { target: { value: 'tech' } });
+  act(() => vi.advanceTimersByTime(300));
+
+  expect(onChange).toHaveBeenCalledExactlyOnceWith('tech');
+});

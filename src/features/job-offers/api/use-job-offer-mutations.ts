@@ -12,24 +12,28 @@ export function useCreateJobOffer() {
     onSuccess: (offer) => {
       queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
   });
 }
 
-/** Saves an offer's fields; its transitions are refetched, since completeness changes them. */
+/**
+ * Saves an offer's fields. Its transitions depend on its completeness, so the cached ones are
+ * dropped: the detail loads them again instead of showing the old ones first. A refusal (a 409)
+ * means the offer changed elsewhere, so its detail is refetched.
+ */
 export function useUpdateJobOffer() {
   const queryClient = useQueryClient();
 
   return $api.useMutation('put', '/job-offers/{jobOfferId}', {
     onSuccess: (offer) => {
       queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
+      queryClient.removeQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey });
 
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey }),
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() }),
-      ]);
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
+    onError: (_error, { params: { path } }) =>
+      queryClient.invalidateQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey }),
   });
 }
 
@@ -41,21 +45,29 @@ export function useTransitionJobOffer() {
     // The answer is the updated offer: keep it, and refetch only what it does not carry.
     onSuccess: (offer, { params: { path } }) => {
       queryClient.setQueryData(jobOfferQueries.detail(path.jobOfferId).queryKey, offer);
-
-      return Promise.all([
+    },
+    // A refused transition means the offer moved elsewhere: its detail is refetched too.
+    onSettled: (_offer, error, { params: { path } }) =>
+      Promise.all([
+        error &&
+          queryClient.invalidateQueries({
+            queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey,
+          }),
         queryClient.invalidateQueries({
           queryKey: jobOfferQueries.transitions(path.jobOfferId).queryKey,
         }),
         queryClient.invalidateQueries({
           queryKey: jobOfferQueries.history(path.jobOfferId).queryKey,
         }),
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() }),
-      ]);
-    },
+        queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() }),
+      ]),
   });
 }
 
-/** Deletes a draft; its cached detail is dropped rather than refetched into a 404. */
+/**
+ * Deletes a draft; its cached detail is dropped rather than refetched into a 404. A refusal (a 409)
+ * means the offer changed elsewhere, so its detail is refetched.
+ */
 export function useDeleteJobOffer() {
   const queryClient = useQueryClient();
 
@@ -63,7 +75,9 @@ export function useDeleteJobOffer() {
     onSuccess: (_data, { params: { path } }) => {
       queryClient.removeQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey });
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
+    onError: (_error, { params: { path } }) =>
+      queryClient.invalidateQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey }),
   });
 }

@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -15,8 +16,10 @@ interface ConfirmDialogProps {
   confirmLabel: string;
   /** What will happen, in a sentence. */
   message?: string;
-  /** Anything else to show or ask before confirming: a field, an error. */
+  /** Anything else to ask before confirming, such as a field. */
   children?: ReactNode;
+  /** Why the last attempt failed, shown in the dialog, since the page behind it is hidden. */
+  error?: string | null;
   /** True while the confirmed action runs: both buttons wait. */
   isPending?: boolean;
   /** True while the confirmation cannot be given yet, such as a required field left empty. */
@@ -32,6 +35,7 @@ export function ConfirmDialog({
   confirmLabel,
   message,
   children,
+  error,
   isPending = false,
   isConfirmDisabled = false,
   onConfirm,
@@ -59,6 +63,11 @@ export function ConfirmDialog({
       <DialogContent>
         {message && <DialogContentText>{message}</DialogContentText>}
         {children}
+        {error && (
+          <Alert severity="error" sx={{ mt: 2 }}>
+            {error}
+          </Alert>
+        )}
       </DialogContent>
       <DialogActions>
         <Button disabled={isPending} onClick={onClose}>

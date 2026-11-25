@@ -74,6 +74,8 @@ export function WorkflowSettingsForm({ configuration, onSave }: WorkflowSettings
                       <Checkbox
                         {...field}
                         checked={value}
+                        // A flag changed during a save would be lost when the form resets to its answer.
+                        disabled={formState.isSubmitting}
                         onChange={(event) => onChange(event.target.checked)}
                         slotProps={{ input: { ref, 'aria-describedby': `${flag}-description` } }}
                       />
@@ -89,7 +91,10 @@ export function WorkflowSettingsForm({ configuration, onSave }: WorkflowSettings
           ))}
         </FormGroup>
         <Alert severity="warning">{t('settings.new-offers-only')}</Alert>
-        {saveOutcome === 'saved' && <Alert severity="success">{t('settings.saved')}</Alert>}
+        {/* Until a flag changes again: the message is about the settings on screen. */}
+        {saveOutcome === 'saved' && !formState.isDirty && (
+          <Alert severity="success">{t('settings.saved')}</Alert>
+        )}
         {saveOutcome === 'failed' && <Alert severity="error">{t('settings.save-failed')}</Alert>}
         <Stack direction="row" sx={{ justifyContent: 'flex-end' }}>
           <Button

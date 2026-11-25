@@ -4,16 +4,15 @@ import { useTranslation } from 'react-i18next';
 
 import {
   companySettingsQueries,
-  useUpdateCompanyConfiguration,
+  useSaveCompanyConfiguration,
   WorkflowSettingsForm,
 } from '@/features/company-settings';
-import { CURRENT_COMPANY_ID } from '@/shared/api/current-company';
 
 /** The company's workflow settings: which optional steps its new offers go through. */
 export function CompanySettingsScreen() {
   const { t } = useTranslation();
   const { data: configuration } = useQuery(companySettingsQueries.configuration());
-  const updateCompanyConfiguration = useUpdateCompanyConfiguration();
+  const saveCompanyConfiguration = useSaveCompanyConfiguration();
 
   return (
     <Stack spacing={3}>
@@ -22,15 +21,7 @@ export function CompanySettingsScreen() {
       </Typography>
       <Typography color="text.secondary">{t('settings.intro')}</Typography>
       {configuration ? (
-        <WorkflowSettingsForm
-          configuration={configuration}
-          onSave={(body) =>
-            updateCompanyConfiguration.mutateAsync({
-              params: { path: { companyId: CURRENT_COMPANY_ID } },
-              body,
-            })
-          }
-        />
+        <WorkflowSettingsForm configuration={configuration} onSave={saveCompanyConfiguration} />
       ) : (
         <Skeleton height={320} variant="rounded" />
       )}

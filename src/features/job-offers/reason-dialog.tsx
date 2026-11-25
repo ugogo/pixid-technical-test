@@ -8,6 +8,8 @@ interface ReasonDialogProps {
   title: string;
   confirmLabel: string;
   isPending: boolean;
+  /** Why the last attempt failed. */
+  error?: string | null;
   onConfirm: (reason: string) => void;
   onClose: () => void;
 }

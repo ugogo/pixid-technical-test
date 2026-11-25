@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
-import { RouteError } from '@/app/route-error';
 import { isEditable, jobOfferQueries } from '@/features/job-offers';
 import { JobOfferEditScreen } from '@/screens/job-offer-edit/job-offer-edit-screen';
 
@@ -17,5 +16,4 @@ export const Route = createFileRoute('/job-offers/$jobOfferId_/edit')({
     }
   },
   component: JobOfferEditScreen,
-  errorComponent: RouteError,
 });

@@ -16,6 +16,10 @@ import {
 /** The offer's salaries and bonuses, each a list the user adds rows to. */
 export function CompensationStep() {
   const { t } = useTranslation();
+  // The form is locked while it sends: rows cannot be added or removed then either.
+  const {
+    formState: { disabled },
+  } = useFormContext<JobOfferFormValues>();
   const salaryEntries = useFieldArray<JobOfferFormValues, 'compensation.salaryEntries'>({
     name: 'compensation.salaryEntries',
   });
@@ -50,6 +54,7 @@ export function CompensationStep() {
             </Grid>
             <Grid size={{ xs: 12, sm: 1 }}>
               <IconButton
+                disabled={disabled}
                 aria-label={t('job-offer-form.remove-salary', { number: index + 1 })}
                 onClick={() => salaryEntries.remove(index)}
               >
@@ -84,6 +89,7 @@ export function CompensationStep() {
             </Grid>
             <Grid size={{ xs: 12, sm: 1 }}>
               <IconButton
+                disabled={disabled}
                 aria-label={t('job-offer-form.remove-bonus', { number: index + 1 })}
                 onClick={() => bonusEntries.remove(index)}
               >
@@ -152,13 +158,17 @@ function EntryListSection({
   onAdd,
   children,
 }: EntryListSectionProps) {
-  const { clearErrors } = useFormContext<JobOfferFormValues>();
+  const {
+    clearErrors,
+    formState: { disabled },
+  } = useFormContext<JobOfferFormValues>();
 
   return (
     <Section title={title}>
       {isEmpty && <Typography color="text.secondary">{emptyText}</Typography>}
       {children}
       <Button
+        disabled={disabled}
         onClick={() => {
           clearErrors('root.compensation');
           onAdd();

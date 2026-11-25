@@ -17,6 +17,7 @@ export const FORM_ERROR_KEYS = [
   'currency-code',
   'amount',
   'compensation-required',
+  'compensation-required-or-save-early',
 ] as const;
 
 const MAX_ADDRESS_LINES = 3;
@@ -30,19 +31,34 @@ const currencyCode = z
   .trim()
   .toUpperCase()
   .regex(/^[A-Z]{3}$/, 'currency-code');
-// An amount field holds what the user typed; an empty one is missing, not 0.
+// An amount field holds what the user typed; an empty one is missing, not 0. A decimal comma
+// ("12,50", as French writes it) reads as a point, and spaces between thousands are ignored.
 const amount = z
   .string()
-  .trim()
-  .min(1, 'required')
-  .pipe(z.coerce.number<string>({ error: 'amount' }).min(0, 'amount'));
+  .transform((typed) => typed.replace(/\s/g, '').replace(',', '.'))
+  .pipe(
+    z
+      .string()
+      .min(1, 'required')
+      // Optional digits: an empty amount fails as `required` only.
+      .regex(/^(\d+(\.\d+)?)?$/, 'amount'),
+  )
+  .transform(Number);
+
+/** The address lines a request carries: trimmed, blank ones left out. */
+function addressLines(lines: string) {
+  return lines
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
 
 /** The address as the form holds it: its lines in one multiline field. */
 const addressSchema = z.object({
   lines: z
     .string()
-    .refine((lines) => lines.split('\n').length <= MAX_ADDRESS_LINES, 'too-many-lines')
-    .refine((lines) => lines.split('\n').every((line) => line.length <= 100), 'too-long'),
+    .refine((lines) => addressLines(lines).length <= MAX_ADDRESS_LINES, 'too-many-lines')
+    .refine((lines) => addressLines(lines).every((line) => line.length <= 100), 'too-long'),
   postalCode: optionalText(20),
   city: requiredText(100),
   region: optionalText(100),
@@ -148,10 +164,7 @@ export function toJobOfferRequest(values: JobOfferFormOutput): JobOfferRequest {
         ? {
             type: 'CUSTOM',
             address: {
-              lines: location.address.lines
-                .split('\n')
-                .map((line) => line.trim())
-                .filter(Boolean),
+              lines: addressLines(location.address.lines),
               postalCode: location.address.postalCode || undefined,
               city: location.address.city,
               region: location.address.region || undefined,

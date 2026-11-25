@@ -30,6 +30,12 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
   const { t } = useTranslation();
   const transitionJobOffer = useTransitionJobOffer();
   const [transitionToConfirm, setTransitionToConfirm] = useState<Transition>();
+  // Once the transitions refetch (after a refusal, say), a confirmation is only for one still offered.
+  const offeredTransitionToConfirm = transitions.find(
+    (offered) =>
+      offered.action === transitionToConfirm?.action &&
+      offered.targetStatus === transitionToConfirm.targetStatus,
+  );
 
   function transitionLabel({ action, targetStatus }: Transition) {
     // A label depends on the target too: `submit` to TO_APPROVE is not `submit` to PUBLISHED.
@@ -43,7 +49,8 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
   function submitTransition({ action }: Transition, reason?: string) {
     transitionJobOffer.mutate(
       { params: { path: { jobOfferId, action } }, body: reason ? { reason } : {} },
-      { onSettled: () => setTransitionToConfirm(undefined) },
+      // On a refusal the dialog stays open, with what the user typed, next to the error.
+      { onSuccess: () => setTransitionToConfirm(undefined) },
     );
   }
 
@@ -60,8 +67,13 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
     const dialogProps = {
       confirmLabel: transitionLabel(transition),
       isPending: transitionJobOffer.isPending,
-      onClose: () => setTransitionToConfirm(undefined),
+      onClose: () => {
+        setTransitionToConfirm(undefined);
+        transitionJobOffer.reset();
+      },
       title: t('transitions.confirm.title', { action: transitionLabel(transition) }),
+      // Inside the dialog: while it is open, the page behind it (and its snackbar) is hidden.
+      error: transitionJobOffer.error && t(errorMessageKey(transitionJobOffer.error)),
     };
 
     if (transition.requiresReason) {
@@ -115,12 +127,18 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
           </Button>
         ))}
       </Stack>
-      {transitionToConfirm && confirmationDialog(transitionToConfirm)}
+      {offeredTransitionToConfirm && confirmationDialog(offeredTransitionToConfirm)}
       {/* The outcome of the last transition, read from the mutation itself. */}
       <Snackbar
         autoHideDuration={5000}
-        onClose={() => transitionJobOffer.reset()}
-        open={transitionJobOffer.isSuccess || transitionJobOffer.isError}
+        onClose={(_event, reason) => {
+          // A click elsewhere may be the next transition: resetting would detach it from the mutation.
+          if (reason !== 'clickaway') transitionJobOffer.reset();
+        }}
+        open={
+          (transitionJobOffer.isSuccess || transitionJobOffer.isError) &&
+          offeredTransitionToConfirm === undefined
+        }
       >
         <Alert
           onClose={() => transitionJobOffer.reset()}

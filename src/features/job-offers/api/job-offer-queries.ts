@@ -2,20 +2,20 @@ import { keepPreviousData } from '@tanstack/react-query';
 
 import { $api } from '@/shared/api/client';
 
-import type { JobOfferListQuery } from '../job-offer-types';
+import { toJobOfferListQuery, type JobOfferListSearch } from '../job-offer-list-search';
 
 const jobOfferPathParams = (jobOfferId: string) => ({ params: { path: { jobOfferId } } });
 
 /** The offers' reads, as options a screen passes to `useQuery`; their keys are what writes refresh. */
 export const jobOfferQueries = {
-  // `[method, path]`: openapi-react-query appends the request to it, so it prefixes every list's key.
-  lists: () => $api.queryOptions('get', '/job-offers').queryKey,
+  /** The key every list shares: openapi-react-query appends each list's request to `[method, path]`. */
+  listsKey: () => $api.queryOptions('get', '/job-offers').queryKey,
   // The previous page stays on screen while the next one loads.
-  list: (query: JobOfferListQuery) =>
+  list: (search: JobOfferListSearch) =>
     $api.queryOptions(
       'get',
       '/job-offers',
-      { params: { query } },
+      { params: { query: toJobOfferListQuery(search) } },
       { placeholderData: keepPreviousData },
     ),
   detail: (jobOfferId: string) =>

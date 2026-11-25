@@ -18,6 +18,7 @@
     "list": {
       "title": "Offres d'emploi",
       "empty": "Aucune offre ne correspond à ces filtres.",
+      "displayed-rows": "{{from}}–{{to}} sur {{count}} · Page {{page}} sur {{pageCount}}",
       "company-address": "Adresse de l'entreprise",
       "columns": {
         "title": "Intitulé",
@@ -138,6 +139,7 @@
       "compensation": "Rémunération",
       "review": "Vérification"
     },
+    "step-count": "Étape {{number}} sur {{count}}",
     "fields": {
       "title": "Intitulé",
       "location": "Lieu",
@@ -183,7 +185,8 @@
       "country-code": "Deux majuscules, comme FR.",
       "currency-code": "Trois majuscules, comme EUR.",
       "amount": "Un nombre, 0 ou plus.",
-      "compensation-required": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
+      "compensation-required": "Ajoutez un salaire ou une prime.",
+      "compensation-required-or-save-early": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
     }
   },
   "settings": {

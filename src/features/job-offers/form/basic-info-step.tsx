@@ -16,9 +16,9 @@ import { TITLE_MAX_LENGTH, type JobOfferFormValues } from './job-offer-form-sche
 /** The offer's title and where the job is. */
 export function BasicInfoStep() {
   const { t } = useTranslation();
-  const { field: locationTypeField } = useController<JobOfferFormValues, 'location.type'>({
-    name: 'location.type',
-  });
+  const {
+    field: { disabled, ...locationTypeField },
+  } = useController<JobOfferFormValues, 'location.type'>({ name: 'location.type' });
 
   return (
     <Stack spacing={3}>
@@ -28,7 +28,7 @@ export function BasicInfoStep() {
         name="title"
         required
       />
-      <FormControl>
+      <FormControl disabled={disabled}>
         <FormLabel id="location-type-label">{t('job-offer-form.fields.location')}</FormLabel>
         <RadioGroup aria-labelledby="location-type-label" row {...locationTypeField}>
           <FormControlLabel
