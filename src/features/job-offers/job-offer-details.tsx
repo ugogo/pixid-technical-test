@@ -1,21 +1,10 @@
 import { Divider, Grid, Paper, Stack, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useFormatters } from '@/shared/i18n/use-formatters';
+import { Section } from '@/shared/ui/section';
 
 import type { JobOffer } from './job-offer-types';
-
-function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Stack spacing={1}>
-      <Typography component="h2" variant="overline">
-        {title}
-      </Typography>
-      {children}
-    </Stack>
-  );
-}
 
 /** What an offer says: where, how much, and when it moved. */
 export function JobOfferDetails({ offer }: { offer: JobOffer }) {
@@ -39,16 +28,12 @@ export function JobOfferDetails({ offer }: { offer: JobOffer }) {
             {offer.location.type === 'COMPANY_ADDRESS' || !address ? (
               <Typography>{t('job-offers.list.company-address')}</Typography>
             ) : (
-              <Typography component="address" sx={{ fontStyle: 'normal' }}>
-                {address.lines?.map((line) => (
-                  <span key={line}>
-                    {line}
-                    <br />
-                  </span>
-                ))}
-                {[address.postalCode, address.city].filter(Boolean).join(' ')}
-                <br />
-                {[address.region, address.countryCode].filter(Boolean).join(', ')}
+              <Typography component="address" sx={{ fontStyle: 'normal', whiteSpace: 'pre-line' }}>
+                {[
+                  ...(address.lines ?? []),
+                  [address.postalCode, address.city].filter(Boolean).join(' '),
+                  [address.region, address.countryCode].filter(Boolean).join(', '),
+                ].join('\n')}
               </Typography>
             )}
           </Section>

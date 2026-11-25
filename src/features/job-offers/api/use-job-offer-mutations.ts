@@ -11,7 +11,7 @@ interface TransitionVariables {
   reason?: string;
 }
 
-/** Moves an offer along its workflow, then refetches it, its transitions, its history and lists. */
+/** Moves an offer along its workflow; buttons stay disabled until the next transitions arrive. */
 export function useTransitionJobOffer(jobOfferId: string) {
   const queryClient = useQueryClient();
 
@@ -23,11 +23,16 @@ export function useTransitionJobOffer(jobOfferId: string) {
           body: reason ? { reason } : {},
         }),
       ),
-    onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: jobOfferKeys.detail(jobOfferId) }),
+    // The answer is the updated offer: keep it, and refetch only what it does not carry.
+    onSuccess: (offer) => {
+      queryClient.setQueryData(jobOfferKeys.detail(jobOfferId), offer);
+
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: jobOfferKeys.transitions(jobOfferId) }),
+        queryClient.invalidateQueries({ queryKey: jobOfferKeys.history(jobOfferId) }),
         queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() }),
-      ]),
+      ]);
+    },
   });
 }
 

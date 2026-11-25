@@ -1,4 +1,4 @@
-export { useJobOffer, useJobOfferHistory, useJobOfferTransitions } from './api/use-job-offer';
+export { jobOfferQueries } from './api/job-offer-queries';
 export { useJobOffers } from './api/use-job-offers';
 export { DeleteJobOfferButton } from './delete-job-offer-button';
 export { JobOfferDetails } from './job-offer-details';

@@ -1,16 +1,15 @@
 import { Skeleton, Stack, Typography } from '@mui/material';
-import { getRouteApi, useNavigate } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { getRouteApi } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import {
   DeleteJobOfferButton,
   JobOfferDetails,
   JobOfferHistory,
+  jobOfferQueries,
   StatusChip,
   TransitionActions,
-  useJobOffer,
-  useJobOfferHistory,
-  useJobOfferTransitions,
 } from '@/features/job-offers';
 import { RouterLink } from '@/shared/ui/router-link';
 
@@ -20,10 +19,9 @@ const route = getRouteApi('/job-offers/$jobOfferId');
 export function JobOfferScreen() {
   const { t } = useTranslation();
   const { jobOfferId } = route.useParams();
-  const navigate = useNavigate();
-  const { data: offer } = useJobOffer(jobOfferId);
-  const { data: transitions } = useJobOfferTransitions(jobOfferId);
-  const { data: history } = useJobOfferHistory(jobOfferId);
+  const { data: offer } = useQuery(jobOfferQueries.detail(jobOfferId));
+  const { data: transitions } = useQuery(jobOfferQueries.transitions(jobOfferId));
+  const { data: history } = useQuery(jobOfferQueries.history(jobOfferId));
 
   return (
     <Stack spacing={3}>
@@ -47,12 +45,7 @@ export function JobOfferScreen() {
             jobOfferId={jobOfferId}
             transitions={transitions.transitions}
           />
-          {offer.status === 'DRAFT' && (
-            <DeleteJobOfferButton
-              jobOfferId={jobOfferId}
-              onDeleted={() => void navigate({ to: '/job-offers' })}
-            />
-          )}
+          {offer.status === 'DRAFT' && <DeleteJobOfferButton jobOfferId={jobOfferId} />}
         </Stack>
       ) : (
         <Skeleton height={40} width={240} />

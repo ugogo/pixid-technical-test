@@ -68,8 +68,8 @@ src/
   companySettingsKeys.configuration(companyId);
   ```
 
-- **Reads**: one Query hook per endpoint, keyed through the factory. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
-- **Writes**: a mutation hook per endpoint (transition and delete so far; create, update and settings come with their screens). A transition or an update invalidates `detail(id)` (the offer, its transitions and its history) and `lists()`. A delete removes `detail(id)` from the cache instead, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
+- **Reads**: keyed through the factory. One offer's reads are `queryOptions` (`jobOfferQueries.detail(id)`) that the screen passes to `useQuery`; the list has its own hook, which keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
+- **Writes**: a mutation hook per endpoint (transition and delete so far; create, update and settings come with their screens). A transition answers with the updated offer, which goes straight into `detail(id)`; its transitions, its history and `lists()` are refetched. A delete removes `detail(id)` from the cache, so a mounted detail does not refetch a 404, and invalidates `lists()`. A create invalidates `lists()`.
 - **Not optimistic**: a write changes several queries at once (the offer, its transitions, its history, its place in the list) and the server can refuse it (409, 422). Waiting for the answer keeps the screen truthful for a delay of a few hundred milliseconds.
 - **Retries and failures**: a query retries once on a network failure or a 5xx, never on a 4xx. A failed first load throws to the route's error boundary; a failed refetch keeps the data on screen.
 - **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request; the client's types leave the header out of each call. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
@@ -86,7 +86,7 @@ The server decides which transitions exist; the UI never recomputes the state ma
 - **Completeness**: while `isComplete` is false, `finalize` is disabled, with a link to the edit screen.
 - **Outcome**: a snackbar says where the offer went, or why the server refused, from the swagger's error code.
 - Edit and Delete are not transitions. The UI shows them in the statuses the swagger allows (Edit in `DRAFT` and `TO_FINALIZE`, with the form; Delete in `DRAFT`, after a confirmation); the server's 409 stays the authority.
-- **A missing offer** (a 404) shows as a missing page with a link back, not as a failure to retry.
+- **A missing offer** (a 404) shows as a missing page with a link back, not as a failure to retry: the detail route's `errorComponent` renders the same `NotFound` as an unknown URL.
 
 ## Forms _(planned)_
 
