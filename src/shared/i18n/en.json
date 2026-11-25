@@ -14,7 +14,32 @@
   },
   "job-offers": {
     "list": {
-      "title": "Job offers"
+      "title": "Job offers",
+      "empty": "No job offer matches these filters.",
+      "company-address": "Company address",
+      "columns": {
+        "title": "Title",
+        "status": "Status",
+        "city": "City",
+        "created-at": "Created",
+        "published-at": "Published"
+      }
+    },
+    "filters": {
+      "title": "Title",
+      "city": "City",
+      "status": "Status",
+      "created-from": "Created from",
+      "created-to": "Created until",
+      "reset": "Clear filters"
     }
+  },
+  "status": {
+    "DRAFT": "Draft",
+    "TO_FINALIZE": "To finalize",
+    "TO_APPROVE": "To approve",
+    "TO_POST": "To post",
+    "PUBLISHED": "Published",
+    "CLOSED": "Closed"
   }
 }

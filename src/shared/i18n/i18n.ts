@@ -1,6 +1,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+import { isOneOf } from '@/shared/is-one-of';
+
 import en from './en.json';
 import fr from './fr.json';
 
@@ -16,14 +18,10 @@ declare module 'i18next' {
   }
 }
 
-export function isLanguage(value: string | null | undefined): value is Language {
-  return LANGUAGES.some((language) => language === value);
-}
-
 function initialLanguage(): Language {
   const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
 
-  if (isLanguage(savedLanguage)) {
+  if (isOneOf(LANGUAGES, savedLanguage)) {
     return savedLanguage;
   }
 

@@ -1,29 +1,14 @@
 import type { components } from '@/shared/api/schema';
 
+import type { JobOfferStatus, TransitionAction } from '@/shared/api/enums';
+
 type Schemas = components['schemas'];
 
-export type JobOfferStatus = Schemas['JobOfferStatus'];
-export type TransitionAction = Schemas['TransitionAction'];
 export type Transition = Schemas['AvailableTransitions']['transitions'][number];
 export type WorkflowConfiguration = Pick<
   Schemas['CompanyConfiguration'],
   'approvalRequired' | 'partialSaveEnabled' | 'manualPostingRequired'
 >;
-
-export const TRANSITION_ACTIONS = [
-  'submit',
-  'finalize',
-  'approve',
-  'reject',
-  'post',
-  'close',
-  'reopen',
-  'withdraw',
-] as const satisfies readonly TransitionAction[];
-
-export function isTransitionAction(value: string): value is TransitionAction {
-  return TRANSITION_ACTIONS.some((action) => action === value);
-}
 
 function transition(
   action: TransitionAction,

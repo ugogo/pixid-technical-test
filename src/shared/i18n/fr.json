@@ -14,7 +14,32 @@
   },
   "job-offers": {
     "list": {
-      "title": "Offres d'emploi"
+      "title": "Offres d'emploi",
+      "empty": "Aucune offre ne correspond à ces filtres.",
+      "company-address": "Adresse de l'entreprise",
+      "columns": {
+        "title": "Intitulé",
+        "status": "Statut",
+        "city": "Ville",
+        "created-at": "Créée le",
+        "published-at": "Publiée le"
+      }
+    },
+    "filters": {
+      "title": "Intitulé",
+      "city": "Ville",
+      "status": "Statut",
+      "created-from": "Créée à partir du",
+      "created-to": "Créée jusqu'au",
+      "reset": "Effacer les filtres"
     }
+  },
+  "status": {
+    "DRAFT": "Brouillon",
+    "TO_FINALIZE": "À finaliser",
+    "TO_APPROVE": "À valider",
+    "TO_POST": "À diffuser",
+    "PUBLISHED": "Publiée",
+    "CLOSED": "Clôturée"
   }
 }

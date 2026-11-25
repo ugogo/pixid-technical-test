@@ -17,6 +17,6 @@
     "dist",
     "public",
     "src/routeTree.gen.ts",
-    "src/shared/api/schema.d.ts"
+    "src/shared/api/schema.ts"
   ]
 }

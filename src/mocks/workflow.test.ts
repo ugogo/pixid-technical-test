@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest';
 
-import { availableTransitions, type JobOfferStatus, type WorkflowConfiguration } from './workflow';
+import type { JobOfferStatus } from '@/shared/api/enums';
+
+import { availableTransitions, type WorkflowConfiguration } from './workflow';
 
 function workflow(flags: Partial<WorkflowConfiguration> = {}): WorkflowConfiguration {
   return {

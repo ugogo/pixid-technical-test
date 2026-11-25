@@ -1,13 +1,12 @@
+import { BONUS_TYPES, LOCATION_TYPES, SALARY_TYPES } from '@/shared/api/enums';
 import type { components } from '@/shared/api/schema';
+import { isOneOf } from '@/shared/is-one-of';
 
 type Schemas = components['schemas'];
 
 export type FieldError = Schemas['ValidationError']['fieldErrors'][number];
 export type JobOfferContent = Pick<Schemas['JobOffer'], 'title' | 'location' | 'compensation'>;
 
-const LOCATION_TYPES = ['COMPANY_ADDRESS', 'CUSTOM'] as const;
-const SALARY_TYPES = ['HOURLY', 'DAILY', 'MONTHLY', 'YEARLY'] as const;
-const BONUS_TYPES = ['SIGNING', 'PERFORMANCE', 'ANNUAL', 'OTHER'] as const;
 const COUNTRY_CODE = /^[A-Z]{2}$/;
 const CURRENCY_CODE = /^[A-Z]{3}$/;
 
@@ -57,7 +56,7 @@ class FieldErrors {
   }
 
   oneOf(field: string, value: unknown, allowed: readonly string[]) {
-    if (typeof value !== 'string' || !allowed.includes(value)) {
+    if (!isOneOf(allowed, value)) {
       this.add(field, `must be one of ${allowed.join(', ')}`, value);
     }
   }
