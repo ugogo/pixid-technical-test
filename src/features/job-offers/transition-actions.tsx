@@ -23,14 +23,14 @@ interface TransitionActionsProps {
 
 /**
  * One button per transition the server offers; the UI never computes the workflow itself.
- * A transition that needs a reason or a confirmation waits in `selected` until the user answers.
+ * A transition that needs a reason or a confirmation waits in `transitionToConfirm` until the user answers.
  */
 export function TransitionActions({ jobOfferId, transitions, isComplete }: TransitionActionsProps) {
   const { t } = useTranslation();
-  const transition = useTransitionJobOffer();
-  const [selected, setSelected] = useState<Transition>();
+  const transitionJobOffer = useTransitionJobOffer();
+  const [transitionToConfirm, setTransitionToConfirm] = useState<Transition>();
 
-  function label({ action, targetStatus }: Transition) {
+  function transitionLabel({ action, targetStatus }: Transition) {
     // A label depends on the target too: `submit` to TO_APPROVE is not `submit` to PUBLISHED.
     const labels: Partial<Record<JobOfferStatus, string>> = t(`transitions.${action}`, {
       returnObjects: true,
@@ -39,43 +39,48 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
     return labels[targetStatus] ?? t(`status.${targetStatus}`);
   }
 
-  function run({ action }: Transition, reason?: string) {
-    transition.mutate(
+  function submitTransition({ action }: Transition, reason?: string) {
+    transitionJobOffer.mutate(
       { params: { path: { jobOfferId, action } }, body: reason ? { reason } : {} },
-      { onSettled: () => setSelected(undefined) },
+      { onSettled: () => setTransitionToConfirm(undefined) },
     );
   }
 
-  function choose(candidate: Transition) {
-    if (candidate.requiresReason || isOneOf(CONFIRMED_ACTIONS, candidate.action)) {
-      setSelected(candidate);
+  function handleTransitionClick(transition: Transition) {
+    if (transition.requiresReason || isOneOf(CONFIRMED_ACTIONS, transition.action)) {
+      setTransitionToConfirm(transition);
       return;
     }
 
-    run(candidate);
+    submitTransition(transition);
   }
 
-  function dialog(chosen: Transition) {
-    const props = {
-      confirmLabel: label(chosen),
-      isPending: transition.isPending,
-      onClose: () => setSelected(undefined),
-      title: t('transitions.confirm.title', { action: label(chosen) }),
+  function confirmationDialog(transition: Transition) {
+    const dialogProps = {
+      confirmLabel: transitionLabel(transition),
+      isPending: transitionJobOffer.isPending,
+      onClose: () => setTransitionToConfirm(undefined),
+      title: t('transitions.confirm.title', { action: transitionLabel(transition) }),
     };
 
-    if (chosen.requiresReason) {
-      return <ReasonDialog {...props} onConfirm={(reason) => run(chosen, reason)} />;
+    if (transition.requiresReason) {
+      return (
+        <ReasonDialog
+          {...dialogProps}
+          onConfirm={(reason) => submitTransition(transition, reason)}
+        />
+      );
     }
 
     return (
       <ConfirmDialog
-        {...props}
+        {...dialogProps}
         message={
-          isOneOf(CONFIRMED_ACTIONS, chosen.action)
-            ? t(`transitions.confirm.${chosen.action}`)
+          isOneOf(CONFIRMED_ACTIONS, transition.action)
+            ? t(`transitions.confirm.${transition.action}`)
             : undefined
         }
-        onConfirm={() => run(chosen)}
+        onConfirm={() => submitTransition(transition)}
         open
       />
     );
@@ -83,36 +88,38 @@ export function TransitionActions({ jobOfferId, transitions, isComplete }: Trans
 
   return (
     <Stack spacing={2}>
-      {!isComplete && transitions.some((candidate) => candidate.action === 'finalize') && (
+      {!isComplete && transitions.some((transition) => transition.action === 'finalize') && (
         <Alert severity="info">{t('job-offer.incomplete')}</Alert>
       )}
       <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1 }}>
-        {transitions.map((candidate) => (
+        {transitions.map((transition) => (
           <Button
-            disabled={transition.isPending || (candidate.action === 'finalize' && !isComplete)}
-            key={candidate.action}
-            onClick={() => choose(candidate)}
-            variant={BACKWARD_ACTIONS.includes(candidate.action) ? 'outlined' : 'contained'}
+            disabled={
+              transitionJobOffer.isPending || (transition.action === 'finalize' && !isComplete)
+            }
+            key={transition.action}
+            onClick={() => handleTransitionClick(transition)}
+            variant={BACKWARD_ACTIONS.includes(transition.action) ? 'outlined' : 'contained'}
           >
-            {label(candidate)}
+            {transitionLabel(transition)}
           </Button>
         ))}
       </Stack>
-      {selected && dialog(selected)}
+      {transitionToConfirm && confirmationDialog(transitionToConfirm)}
       {/* The outcome of the last transition, read from the mutation itself. */}
       <Snackbar
         autoHideDuration={5000}
-        onClose={() => transition.reset()}
-        open={transition.isSuccess || transition.isError}
+        onClose={() => transitionJobOffer.reset()}
+        open={transitionJobOffer.isSuccess || transitionJobOffer.isError}
       >
         <Alert
-          onClose={() => transition.reset()}
-          severity={transition.isError ? 'error' : 'success'}
+          onClose={() => transitionJobOffer.reset()}
+          severity={transitionJobOffer.isError ? 'error' : 'success'}
           variant="filled"
         >
-          {transition.error && t(errorMessageKey(transition.error))}
-          {transition.data &&
-            t('transitions.done', { status: t(`status.${transition.data.status}`) })}
+          {transitionJobOffer.error && t(errorMessageKey(transitionJobOffer.error))}
+          {transitionJobOffer.data &&
+            t('transitions.done', { status: t(`status.${transitionJobOffer.data.status}`) })}
         </Alert>
       </Snackbar>
     </Stack>

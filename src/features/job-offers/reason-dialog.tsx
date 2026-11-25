@@ -13,14 +13,14 @@ interface ReasonDialogProps {
 }
 
 /** Asks why, for a transition the server only accepts with a reason. Mounted only while open. */
-export function ReasonDialog({ onConfirm, ...props }: ReasonDialogProps) {
+export function ReasonDialog({ onConfirm, ...dialogProps }: ReasonDialogProps) {
   const { t } = useTranslation();
   const [reason, setReason] = useState('');
   const trimmedReason = reason.trim();
 
   return (
     <ConfirmDialog
-      {...props}
+      {...dialogProps}
       isConfirmDisabled={trimmedReason === ''}
       onConfirm={() => onConfirm(trimmedReason)}
       open

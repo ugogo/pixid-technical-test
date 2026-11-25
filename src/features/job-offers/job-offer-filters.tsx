@@ -50,10 +50,12 @@ export function JobOfferFilters({ values, onChange, onReset }: JobOfferFiltersPr
         label={t('job-offers.filters.status')}
         onChange={(event) => {
           const { value } = event.target;
-          const selected: unknown[] = typeof value === 'string' ? value.split(',') : value;
+          const selectedStatuses: unknown[] = typeof value === 'string' ? value.split(',') : value;
 
           // In the swagger's order, whatever the click order, so a selection has one URL.
-          onChange({ status: JOB_OFFER_STATUSES.filter((status) => selected.includes(status)) });
+          onChange({
+            status: JOB_OFFER_STATUSES.filter((status) => selectedStatuses.includes(status)),
+          });
         }}
         select
         size="small"

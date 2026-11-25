@@ -4,7 +4,7 @@ import { $api } from '@/shared/api/client';
 
 import type { JobOfferListQuery } from '../job-offer-types';
 
-const byId = (jobOfferId: string) => ({ params: { path: { jobOfferId } } });
+const jobOfferPathParams = (jobOfferId: string) => ({ params: { path: { jobOfferId } } });
 
 /** The offers' reads, as options a screen passes to `useQuery`; their keys are what writes refresh. */
 export const jobOfferQueries = {
@@ -19,9 +19,13 @@ export const jobOfferQueries = {
       { placeholderData: keepPreviousData },
     ),
   detail: (jobOfferId: string) =>
-    $api.queryOptions('get', '/job-offers/{jobOfferId}', byId(jobOfferId)),
+    $api.queryOptions('get', '/job-offers/{jobOfferId}', jobOfferPathParams(jobOfferId)),
   transitions: (jobOfferId: string) =>
-    $api.queryOptions('get', '/job-offers/{jobOfferId}/transitions', byId(jobOfferId)),
+    $api.queryOptions(
+      'get',
+      '/job-offers/{jobOfferId}/transitions',
+      jobOfferPathParams(jobOfferId),
+    ),
   history: (jobOfferId: string) =>
-    $api.queryOptions('get', '/job-offers/{jobOfferId}/history', byId(jobOfferId)),
+    $api.queryOptions('get', '/job-offers/{jobOfferId}/history', jobOfferPathParams(jobOfferId)),
 };
