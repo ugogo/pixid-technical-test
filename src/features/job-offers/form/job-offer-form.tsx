@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Paper, Stack, Step, StepLabel, Stepper, Typography } from '@mui/material';
 import { useBlocker, useNavigate } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -114,13 +114,22 @@ function applySaveError(
   return { type: 'invalid', step: firstStepWithErrors ?? 'basicInfo' };
 }
 
+/** What the form does once the request is answered. */
+export interface JobOfferSaveCallbacks {
+  onSuccess: (saved: JobOffer) => void;
+  onError: (error: unknown) => void;
+}
+
 interface JobOfferFormProps {
   /** The offer to edit; without one, the form creates an offer. */
   offer?: JobOffer;
   /** Whether the offer can be saved before its compensation is filled in. */
   canSaveEarly: boolean;
-  /** Sends the request and resolves with the saved offer. */
-  onSave: (request: JobOfferRequest) => Promise<JobOffer>;
+  /**
+   * Sends the request through the page's mutation, with `callbacks` as `mutate`'s own: TanStack
+   * Query skips them once the page has unmounted, so a user who left during the save stays there.
+   */
+  onSave: (request: JobOfferRequest, callbacks: JobOfferSaveCallbacks) => void;
 }
 
 /** Creates or edits an offer in three steps, then opens it. */
@@ -132,7 +141,6 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   const [phase, setPhase] = useState<FormPhase>('editing');
   const isSaving = phase === 'checkingSave' || phase === 'sending';
   const isBusy = phase === 'checkingStep' || isSaving || phase === 'conflict';
-  const isMounted = useRef(false);
   const jobOfferForm = useForm<JobOfferFormValues, unknown, JobOfferFormOutput>({
     defaultValues: toJobOfferFormValues(offer),
     // Every field is locked while the request runs, since a change then would not be the one sent,
@@ -143,14 +151,6 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
     resolver: zodResolver(jobOfferFormSchema),
   });
   const { clearErrors, formState, getValues, setError, trigger } = jobOfferForm;
-
-  useEffect(() => {
-    isMounted.current = true;
-
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
 
   /**
    * Checks a step's fields. Leaving the compensation step also needs a salary or a bonus, unless
@@ -207,24 +207,22 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
     const request = toJobOfferRequest(jobOfferFormSchema.parse(getValues()));
 
     setPhase('sending');
+    onSave(request, {
+      // The saved form is still dirty: opening the saved offer skips the leave prompt. A new offer's
+      // form leaves the history, so Back goes to the list; an edit stays, as the detail before it does.
+      onSuccess: (saved) =>
+        void navigate({
+          to: '/job-offers/$jobOfferId',
+          params: { jobOfferId: saved.id },
+          replace: offer === undefined,
+          ignoreBlocker: true,
+        }),
+      onError: (error) => {
+        const failure = applySaveError(error, jobOfferForm);
 
-    const saved = await onSave(request).catch((error: unknown) => {
-      const failure = applySaveError(error, jobOfferForm);
-
-      if (failure.type === 'invalid') setShownStep(failure.step);
-      setPhase(PHASE_AFTER_SAVE_FAILURE[failure.type]);
-    });
-
-    // A user who left while the request ran stays where they went.
-    if (!saved || !isMounted.current) return;
-
-    // The saved form is still dirty: opening the saved offer skips the leave prompt. A new offer's
-    // form leaves the history, so Back goes to the list; an edit stays, as the detail before it does.
-    await navigate({
-      to: '/job-offers/$jobOfferId',
-      params: { jobOfferId: saved.id },
-      replace: offer === undefined,
-      ignoreBlocker: true,
+        if (failure.type === 'invalid') setShownStep(failure.step);
+        setPhase(PHASE_AFTER_SAVE_FAILURE[failure.type]);
+      },
     });
   }
 
