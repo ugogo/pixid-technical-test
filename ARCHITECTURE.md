@@ -137,7 +137,7 @@ The create and edit pages share `JobOfferForm` (`features/job-offers/form/`): th
 | The step on screen            | `JobOfferForm`'s state                                                                   |
 | What the form is doing        | `JobOfferForm`'s `FormPhase`: editing, checking a step, saving, save failed, or conflict |
 | Values and field errors       | react-hook-form; a hidden step's values survive                                          |
-| The request and the cache     | The page's mutation, passed to the form as an async `onSave`                             |
+| The request and the cache     | The page's mutation: `onSave` runs it with the form's callbacks                          |
 | Whether saving early is shown | On create, the company's `partialSaveEnabled`; on edit, always (see the mock's table)    |
 | Create or edit                | An `offer` prop means edit, and its values fill the form                                 |
 | Leaving with unsaved changes  | TanStack Router's `useBlocker`, which asks first                                         |
@@ -158,7 +158,7 @@ Create / Save changes (on review) ──▶ check, all rules ──────�
 ```
 
 - **Plain React state**: the flow is linear, so `useState` holds it, next to the form. An XState machine was tried first; it repeated what react-hook-form and the mutation already track.
-- **No double send, no lost edit**: while the form checks or saves, its fields and buttons are disabled. A save that lands after the user left keeps them where they went.
+- **No double send, no lost edit**: while the form checks or saves, its fields and buttons are disabled. A save that lands after the user left keeps them where they went: the form's callbacks are `mutate`'s own, which TanStack Query skips once the page has unmounted.
 - **Server errors**: a 422 error goes on the field it names, or at the top of its step when the form does not show that field (`compensation`, `location.address`). The server's messages show as it words them, in English; the client checks the same rules first, so they are rare.
 - **Validation** runs when the user leaves a field (`onBlur`), not on every keystroke. Not `onTouched`, which checks a whole salary list, new empty row included, when a row is added. Moving to the next step focuses the first invalid field.
 
@@ -253,7 +253,8 @@ There is no end-to-end suite: the page tests run against the same handlers as th
 - A file is named after its one component (`job-offer-form.tsx`, `JobOfferForm`).
 - Return early: the empty or failed case first.
 - No `as` type assertions; an awaited value goes into a named `const` before a `return` or an `if` reads it.
-- A form holds its fields, their validation and its flow, and its page passes an async `onSave`. A button that runs one write (a transition, a delete) holds its own mutation, since nothing else needs its state.
+- A form holds its fields, their validation and its flow, and its page passes `onSave`, which runs the page's mutation with the form's callbacks. A button that runs one write (a transition, a delete) holds its own mutation, since nothing else needs its state.
+- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system, such as the debounced field's timer; its import then disables the rule, with the reason.
 
 ## Trade-offs and next steps
 

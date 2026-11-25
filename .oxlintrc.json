@@ -16,6 +16,18 @@
       {
         "assertFunctionNames": ["expect", "expectAccessible"]
       }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["useEffect", "useLayoutEffect"],
+            "message": "Most effects are not needed: derive the value while rendering, act in the event handler, use the router or TanStack Query, or key a component to reset it. An effect only syncs with an outside system (a timer, a subscription): disable this rule on that import, with the reason."
+          }
+        ]
+      }
     ]
   },
   "ignorePatterns": [
@@ -37,6 +49,13 @@
                 "group": ["@/app/**", "@/routes/**", "@/screens/**", "@/features/**", "@/mocks/**"],
                 "message": "shared/ is the bottom layer: it imports nothing above it."
               }
+            ],
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["useEffect", "useLayoutEffect"],
+                "message": "Most effects are not needed: derive the value while rendering, act in the event handler, use the router or TanStack Query, or key a component to reset it. An effect only syncs with an outside system (a timer, a subscription): disable this rule on that import, with the reason."
+              }
             ]
           }
         ]
@@ -53,6 +72,13 @@
                 "group": ["@/app/**", "@/routes/**", "@/screens/**", "@/mocks/**"],
                 "message": "A feature builds on shared/ only: screens assemble features, not the reverse."
               }
+            ],
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["useEffect", "useLayoutEffect"],
+                "message": "Most effects are not needed: derive the value while rendering, act in the event handler, use the router or TanStack Query, or key a component to reset it. An effect only syncs with an outside system (a timer, a subscription): disable this rule on that import, with the reason."
+              }
             ]
           }
         ]
@@ -68,6 +94,13 @@
               {
                 "group": ["@/app/**", "@/routes/**", "@/features/*/**"],
                 "message": "A screen imports a feature through its index.ts, and nothing above it."
+              }
+            ],
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["useEffect", "useLayoutEffect"],
+                "message": "Most effects are not needed: derive the value while rendering, act in the event handler, use the router or TanStack Query, or key a component to reset it. An effect only syncs with an outside system (a timer, a subscription): disable this rule on that import, with the reason."
               }
             ]
           }

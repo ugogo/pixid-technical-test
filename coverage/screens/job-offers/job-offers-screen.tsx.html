@@ -36,28 +36,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>11/11</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>8/8</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/6</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>12/12</span>
+                <span class='fraction'>10/10</span>
             </div>
         
             
@@ -135,8 +135,8 @@
 <a name='L59'></a><a href='#L59'>59</a>
 <a name='L60'></a><a href='#L60'>60</a>
 <a name='L61'></a><a href='#L61'>61</a>
-<a name='L62'></a><a href='#L62'>62</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -153,26 +153,28 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">56x</span>
-<span class="cline-any cline-yes">56x</span>
-<span class="cline-any cline-yes">56x</span>
-<span class="cline-any cline-yes">56x</span>
+<span class="cline-any cline-yes">55x</span>
+<span class="cline-any cline-yes">55x</span>
+<span class="cline-any cline-yes">55x</span>
+<span class="cline-any cline-yes">55x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">56x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">56x</span>
-<span class="cline-any cline-yes">50x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">55x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">56x</span>
+<span class="cline-any cline-yes">55x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -198,8 +200,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { Stack, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { getRouteApi } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { getRouteApi, Navigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 &nbsp;
 import {
@@ -221,13 +222,6 @@ export function JobOffersScreen() {
   const lastPage =
     jobOfferPage &amp;&amp; !isPlaceholderData ? Math.max(jobOfferPage.totalPages - 1, 0) : undefined;
 &nbsp;
-  // A page past the last one (an old link, or offers that left the filter) shows the last page.
-  useEffect(() =&gt; {
-    if (lastPage !== undefined &amp;&amp; search.page &gt; lastPage) {
-      void navigate({ search: (previous) =&gt; ({ ...previous, page: lastPage }), replace: true });
-    }
-  }, [lastPage, navigate, search.page]);
-&nbsp;
   /** A change of filter, sort or size starts again from the first page; a page change says so. */
   function updateSearch(changes: Partial&lt;JobOfferListSearch&gt;) {
     void navigate({ search: (previous) =&gt; ({ ...previous, page: 0, ...changes }) });
@@ -235,6 +229,15 @@ export function JobOffersScreen() {
 &nbsp;
   return (
     &lt;Stack spacing={3}&gt;
+      {/* A page past the last one (an old link, or offers that left the filter) shows the last page. */}
+      {lastPage !== undefined &amp;&amp; search.page &gt; lastPage &amp;&amp; (
+        &lt;Navigate
+          from="/job-offers/"
+          replace
+          search={(previous) =&gt; ({ ...previous, page: lastPage })}
+          to="."
+        /&gt;
+      )}
       &lt;Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}&gt;
         &lt;Typography component="h1" variant="h4"&gt;
           {t('job-offers.list.title')}
@@ -264,7 +267,7 @@ export function JobOffersScreen() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
-                at 2026-11-25T22:14:07.832Z
+                at 2026-11-25T23:36:01.693Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

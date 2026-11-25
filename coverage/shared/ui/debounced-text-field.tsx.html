@@ -36,7 +36,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>28/28</span>
+                <span class='fraction'>22/22</span>
             </div>
         
             
@@ -57,7 +57,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>23/23</span>
+                <span class='fraction'>17/17</span>
             </div>
         
             
@@ -129,12 +129,8 @@
 <a name='L53'></a><a href='#L53'>53</a>
 <a name='L54'></a><a href='#L54'>54</a>
 <a name='L55'></a><a href='#L55'>55</a>
-<a name='L56'></a><a href='#L56'>56</a>
-<a name='L57'></a><a href='#L57'>57</a>
-<a name='L58'></a><a href='#L58'>58</a>
-<a name='L59'></a><a href='#L59'>59</a>
-<a name='L60'></a><a href='#L60'>60</a>
-<a name='L61'></a><a href='#L61'>61</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L56'></a><a href='#L56'>56</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
@@ -150,52 +146,47 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">236x</span>
-<span class="cline-any cline-yes">236x</span>
-<span class="cline-any cline-yes">236x</span>
-<span class="cline-any cline-yes">236x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">236x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">236x</span>
+<span class="cline-any cline-yes">232x</span>
 <span class="cline-any cline-yes">232x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">236x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">232x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">236x</span>
+<span class="cline-any cline-yes">232x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">232x</span>
+<span class="cline-any cline-yes">111x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">232x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">16x</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { TextField, type TextFieldProps } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+// oxlint-disable-next-line no-restricted-imports -- a timer is an outside system: an effect's job
+import { useEffect, useEffectEvent, useState } from 'react';
 &nbsp;
 const DEBOUNCE_DELAY = 300;
 &nbsp;
@@ -212,8 +203,6 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
   // What the user typed and the parent has not received yet; otherwise the parent's value shows.
   const [draft, setDraft] = useState&lt;string&gt;();
   const [shownValue, setShownValue] = useState(value);
-  const pendingReport = useRef&lt;ReturnType&lt;typeof setTimeout&gt;&gt;(undefined);
-  const latestValue = useRef(value);
 &nbsp;
   // A new value from the parent (a report landing, a reset, Back) wins over the draft.
   if (value !== shownValue) {
@@ -221,16 +210,22 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
     setDraft(undefined);
   }
 &nbsp;
-  useEffect(() =&gt; {
-    latestValue.current = value;
-  });
-  useEffect(() =&gt; () =&gt; clearTimeout(pendingReport.current), []);
-&nbsp;
   function report(typed: string) {
-    clearTimeout(pendingReport.current);
     setDraft(undefined);
-    if (typed !== latestValue.current) onChange(typed);
+    if (typed !== value) onChange(typed);
   }
+&nbsp;
+  const reportSettledDraft = useEffectEvent(report);
+&nbsp;
+  // Reports the draft once it stops changing. Dropping the draft (a report, a reset, leaving the
+  // field) or unmounting clears the pending report.
+  useEffect(() =&gt; {
+    if (draft === undefined) return;
+&nbsp;
+    const pendingReport = setTimeout(() =&gt; reportSettledDraft(draft), DEBOUNCE_DELAY);
+&nbsp;
+    return () =&gt; clearTimeout(pendingReport);
+  }, [draft]);
 &nbsp;
   return (
     &lt;TextField
@@ -239,17 +234,7 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
         <span class="missing-if-branch" title="else path not taken" >E</span>if (draft !== undefined) report(draft);
         onBlur?.(event);
       }}
-      onChange={(event) =&gt; {
-        const typed = event.target.value;
-        const valueWhenTyped = value;
-&nbsp;
-        setDraft(typed);
-        clearTimeout(pendingReport.current);
-        // Dropped if the parent's value changed meanwhile: its new value won over the draft.
-        pendingReport.current = setTimeout(() =&gt; {
-          if (latestValue.current === valueWhenTyped) report(typed);
-        }, DEBOUNCE_DELAY);
-      }}
+      onChange={(event) =&gt; setDraft(event.target.value)}
       value={draft ?? value}
     /&gt;
   );
@@ -261,7 +246,7 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://vitest.dev/" target="_blank" rel="noopener noreferrer">Vitest</a>
-                at 2026-11-25T22:14:07.832Z
+                at 2026-11-25T23:36:01.693Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
