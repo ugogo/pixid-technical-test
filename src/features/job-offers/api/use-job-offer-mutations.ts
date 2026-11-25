@@ -12,7 +12,7 @@ export function useCreateJobOffer() {
     onSuccess: (offer) => {
       queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
   });
 }
@@ -30,7 +30,7 @@ export function useUpdateJobOffer() {
       queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
       queryClient.removeQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey });
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
     onError: (_error, { params: { path } }) =>
       queryClient.invalidateQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey }),
@@ -53,7 +53,7 @@ export function useTransitionJobOffer() {
         queryClient.invalidateQueries({
           queryKey: jobOfferQueries.history(path.jobOfferId).queryKey,
         }),
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() }),
+        queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() }),
       ]);
     },
   });
@@ -67,7 +67,7 @@ export function useDeleteJobOffer() {
     onSuccess: (_data, { params: { path } }) => {
       queryClient.removeQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey });
 
-      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.listsKey() });
     },
   });
 }

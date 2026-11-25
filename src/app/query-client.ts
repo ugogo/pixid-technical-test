@@ -10,7 +10,8 @@ export function createQueryClient() {
         retry: (failureCount, error) =>
           failureCount < 1 && !(error instanceof ApiRequestError && error.status < 500),
         staleTime: 30_000,
-        // A failed first load goes to the route's error boundary; a failed refetch keeps its data.
+        // A request with no data yet (a first load, or a new page or filter of the list) that fails
+        // goes to the route's error boundary; a failed refetch keeps the data on screen.
         throwOnError: (_error, query) => query.state.data === undefined,
       },
     },

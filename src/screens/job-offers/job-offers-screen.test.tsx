@@ -26,7 +26,32 @@ describe('JobOffersScreen', () => {
 
     await waitForRows(20);
     expect(dataRows()[0]).toHaveTextContent('Agent d’entretien (H/F)');
-    expect(screen.getByText('1–20 of 30')).toBeInTheDocument();
+    expect(screen.getByText('Showing 1–20 of 30 · Page 1 of 2')).toBeInTheDocument();
+  });
+
+  test('a page past the last one shows the last page', async () => {
+    const { router } = await renderRoute('/job-offers?page=5');
+
+    await waitForRows(10);
+    expect(screen.getByText('Showing 21–30 of 30 · Page 2 of 2')).toBeInTheDocument();
+    expect(router.state.location.search).toMatchObject({ page: 1 });
+  });
+
+  test('a failed page keeps the app bar, and its retry loads it', async () => {
+    server.use(
+      http.get(`${API_BASE_URL}/job-offers`, () => new HttpResponse(null, { status: 503 })),
+    );
+    const { router } = await renderRoute('/job-offers');
+    const user = userEvent.setup();
+
+    expect(await screen.findByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+
+    server.resetHandlers();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    await waitForRows(20);
+    expect(router.state.location.pathname).toBe('/job-offers');
   });
 
   test('reads its filters from the URL', async () => {
@@ -96,7 +121,7 @@ describe('JobOffersScreen', () => {
     await user.click(screen.getByRole('button', { name: 'Go to next page' }));
 
     await waitForRows(10);
-    expect(screen.getByText('21–30 of 30')).toBeInTheDocument();
+    expect(screen.getByText('Showing 21–30 of 30 · Page 2 of 2')).toBeInTheDocument();
     expect(router.state.location.search).toEqual({ page: 1 });
   });
 

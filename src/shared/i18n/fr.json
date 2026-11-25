@@ -18,6 +18,7 @@
     "list": {
       "title": "Offres d'emploi",
       "empty": "Aucune offre ne correspond à ces filtres.",
+      "displayed-rows": "{{from}}–{{to}} sur {{count}} · Page {{page}} sur {{pageCount}}",
       "company-address": "Adresse de l'entreprise",
       "columns": {
         "title": "Intitulé",

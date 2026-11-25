@@ -18,6 +18,7 @@
     "list": {
       "title": "Job offers",
       "empty": "No job offer matches these filters.",
+      "displayed-rows": "Showing {{from}}–{{to}} of {{count}} · Page {{page}} of {{pageCount}}",
       "company-address": "Company address",
       "columns": {
         "title": "Title",
