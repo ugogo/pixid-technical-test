@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import {
   DeleteJobOfferButton,
+  isDeletable,
   isEditable,
   JobOfferDetails,
   JobOfferHistory,
@@ -42,7 +43,8 @@ export function JobOfferScreen() {
       {offer && transitions ? (
         <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <TransitionActions
-            isComplete={offer.isComplete ?? false}
+            // Optional in the swagger: when absent, the server's 422 says what is missing.
+            isComplete={offer.isComplete !== false}
             jobOfferId={jobOfferId}
             transitions={transitions.transitions}
           />
@@ -55,7 +57,7 @@ export function JobOfferScreen() {
               {t('job-offer.edit')}
             </RouterButton>
           )}
-          {offer.status === 'DRAFT' && <DeleteJobOfferButton jobOfferId={jobOfferId} />}
+          {isDeletable(offer) && <DeleteJobOfferButton jobOfferId={jobOfferId} />}
         </Stack>
       ) : (
         <Skeleton height={40} width={240} />

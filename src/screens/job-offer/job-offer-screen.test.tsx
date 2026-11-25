@@ -45,16 +45,50 @@ describe('JobOfferScreen', () => {
     const { user } = await renderOffer('Serveur en brasserie');
 
     await user.click(await screen.findByRole('button', { name: 'Reject' }));
-    const dialog = screen.getByRole('dialog', { name: 'Reject?' });
-    const confirm = within(dialog).getByRole('button', { name: 'Reject' });
+    const rejectDialog = screen.getByRole('dialog', { name: 'Reject?' });
+    const rejectButton = within(rejectDialog).getByRole('button', { name: 'Reject' });
 
-    expect(confirm).toBeDisabled();
-    await user.type(within(dialog).getByRole('textbox', { name: 'Reason' }), 'Salary too low');
-    await user.click(confirm);
+    expect(rejectButton).toBeDisabled();
+    await user.type(
+      within(rejectDialog).getByRole('textbox', { name: 'Reason' }),
+      'Salary too low',
+    );
+    await user.click(rejectButton);
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
     expect(await screen.findByRole('button', { name: 'Delete' })).toBeInTheDocument();
     await waitFor(() => expect(historyEntries()[0]).toHaveTextContent('Reason: Salary too low'));
+  });
+
+  test('keeps the reason dialog open, with its reason, when the server refuses', async () => {
+    const { user } = await renderOffer('Serveur en brasserie');
+
+    server.use(
+      http.post(`${API_BASE_URL}/job-offers/:jobOfferId/transitions/:action`, () =>
+        HttpResponse.error(),
+      ),
+    );
+    await user.click(await screen.findByRole('button', { name: 'Reject' }));
+    const rejectDialog = screen.getByRole('dialog', { name: 'Reject?' });
+
+    await user.type(within(rejectDialog).getByRole('textbox', { name: 'Reason' }), 'Too low');
+    await user.click(within(rejectDialog).getByRole('button', { name: 'Reject' }));
+
+    expect(await within(rejectDialog).findByText('The action failed. Try again.')).toBeVisible();
+    expect(within(rejectDialog).getByRole('textbox', { name: 'Reason' })).toHaveValue('Too low');
+  });
+
+  test('a click while the last outcome shows still runs the next transition in full', async () => {
+    const { user } = await renderOffer('Aide-soignant');
+
+    await user.click(await screen.findByRole('button', { name: 'Approve' }));
+    expect(await screen.findByText('Status changed to To post.')).toBeInTheDocument();
+
+    const postButton = await screen.findByRole('button', { name: 'Post' });
+
+    await user.click(postButton);
+    expect(postButton).toBeDisabled();
+    expect(await screen.findByText('Status changed to Published.')).toBeInTheDocument();
   });
 
   test('asks before withdrawing, and does nothing on cancel', async () => {
@@ -112,6 +146,38 @@ describe('JobOfferScreen', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'This action is no longer available: the offer has changed. Reload to see it.',
+    );
+  });
+
+  test('loads again on a later visit after a failure', async () => {
+    const jobOfferId = await seededOfferId('Aide-soignant');
+
+    server.use(
+      http.get(
+        `${API_BASE_URL}/job-offers/:jobOfferId`,
+        () => new HttpResponse(null, { status: 503 }),
+      ),
+    );
+    const { router } = await renderRoute(`/job-offers/${jobOfferId}`);
+
+    expect(await screen.findByText('Something went wrong')).toBeInTheDocument();
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+
+    server.resetHandlers();
+    await router.navigate({ to: '/job-offers' });
+    await screen.findByRole('heading', { level: 1, name: 'Job offers' });
+    await router.navigate({ to: '/job-offers/$jobOfferId', params: { jobOfferId } });
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: /Aide-soignant/ }),
+    ).toBeInTheDocument();
+  });
+
+  test('its "back" link is not marked as the current page', async () => {
+    await renderOffer('Aide-soignant');
+
+    expect(screen.getByRole('link', { name: 'Back to job offers' })).not.toHaveAttribute(
+      'aria-current',
     );
   });
 

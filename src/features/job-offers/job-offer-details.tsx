@@ -36,7 +36,7 @@ export function JobOfferDetails({ offer }: { offer: JobOfferContent }) {
                 {[
                   ...(address.lines ?? []),
                   [address.postalCode, address.city].filter(Boolean).join(' '),
-                  [address.region, address.countryCode].filter(Boolean).join(', '),
+                  [address.region, format.country(address.countryCode)].filter(Boolean).join(', '),
                 ].join('\n')}
               </Typography>
             )}
