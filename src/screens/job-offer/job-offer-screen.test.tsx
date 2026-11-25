@@ -4,20 +4,9 @@ import { http, HttpResponse } from 'msw';
 import { describe, expect, test } from 'vitest';
 
 import { server } from '@/mocks/node';
-import { apiClient, API_BASE_URL } from '@/shared/api/client';
+import { API_BASE_URL } from '@/shared/api/client';
 import { renderRoute } from '@/test/render-route';
-
-/** The id of the seeded offer whose title contains `title`. */
-async function seededOfferId(title: string) {
-  const { data } = await apiClient.GET('/job-offers', {
-    params: { query: { titleContains: title } },
-  });
-  const id = data?.content[0]?.id;
-
-  if (!id) throw new Error(`No seeded offer matches "${title}"`);
-
-  return id;
-}
+import { seededOfferId } from '@/test/seeded-offer-id';
 
 async function renderOffer(title: string) {
   const view = await renderRoute(`/job-offers/${await seededOfferId(title)}`);
