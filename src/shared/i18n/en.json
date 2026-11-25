@@ -156,6 +156,7 @@
       "currency": "Currency",
       "description": "Description"
     },
+    "character-count": "{{count}}/{{limit}} characters",
     "add-salary": "Add a salary",
     "add-bonus": "Add a bonus",
     "remove-salary": "Remove salary {{number}}",
@@ -184,5 +185,27 @@
       "amount": "A number, 0 or more.",
       "compensation-required": "Add a salary or a bonus, or save and finish later."
     }
+  },
+  "settings": {
+    "title": "Workflow settings",
+    "intro": "Configure how job offers flow through your approval process.",
+    "flags": {
+      "approvalRequired": {
+        "label": "Require approval",
+        "description": "Job offers must be approved before publishing."
+      },
+      "partialSaveEnabled": {
+        "label": "Allow partial save",
+        "description": "Incomplete offers can be saved and finished later."
+      },
+      "manualPostingRequired": {
+        "label": "Manual posting",
+        "description": "Manually control when offers go live."
+      }
+    },
+    "new-offers-only": "Changes apply to new offers only.",
+    "save": "Save changes",
+    "saved": "Settings saved.",
+    "save-failed": "The settings could not be saved. Try again."
   }
 }

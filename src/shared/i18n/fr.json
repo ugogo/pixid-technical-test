@@ -156,6 +156,7 @@
       "currency": "Devise",
       "description": "Description"
     },
+    "character-count": "{{count}}/{{limit}} caractères",
     "add-salary": "Ajouter un salaire",
     "add-bonus": "Ajouter une prime",
     "remove-salary": "Retirer le salaire {{number}}",
@@ -184,5 +185,27 @@
       "amount": "Un nombre, 0 ou plus.",
       "compensation-required": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
     }
+  },
+  "settings": {
+    "title": "Paramètres du workflow",
+    "intro": "Choisissez les étapes par lesquelles passent vos offres d'emploi.",
+    "flags": {
+      "approvalRequired": {
+        "label": "Validation obligatoire",
+        "description": "Les offres doivent être validées avant leur publication."
+      },
+      "partialSaveEnabled": {
+        "label": "Enregistrement partiel",
+        "description": "Une offre incomplète peut être enregistrée et terminée plus tard."
+      },
+      "manualPostingRequired": {
+        "label": "Diffusion manuelle",
+        "description": "Vous choisissez quand les offres sont mises en ligne."
+      }
+    },
+    "new-offers-only": "Les changements ne s'appliquent qu'aux nouvelles offres.",
+    "save": "Enregistrer",
+    "saved": "Paramètres enregistrés.",
+    "save-failed": "Les paramètres n'ont pas pu être enregistrés. Réessayez."
   }
 }
