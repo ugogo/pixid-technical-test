@@ -26,6 +26,8 @@ export function ReasonDialog({ onConfirm, ...props }: ReasonDialogProps) {
       open
     >
       <TextField
+        // oxlint-disable-next-line jsx-a11y/no-autofocus -- WAI-ARIA: a dialog focuses its first field
+        autoFocus
         fullWidth
         label={t('transitions.reason')}
         margin="dense"
