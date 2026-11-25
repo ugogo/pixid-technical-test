@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as JobOffersIndexRouteImport } from './routes/job-offers/index'
 import { Route as JobOffersJobOfferIdRouteImport } from './routes/job-offers/$jobOfferId'
 import { Route as JobOffersNewRouteImport } from './routes/job-offers/new'
@@ -18,6 +19,11 @@ import { Route as JobOffersJobOfferIdEditRouteImport } from './routes/job-offers
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const JobOffersIndexRoute = JobOffersIndexRouteImport.update({
@@ -43,6 +49,7 @@ const JobOffersJobOfferIdEditRoute = JobOffersJobOfferIdEditRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers/': typeof JobOffersIndexRoute
@@ -50,6 +57,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers': typeof JobOffersIndexRoute
@@ -58,6 +66,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/settings': typeof SettingsRoute
   '/job-offers/$jobOfferId': typeof JobOffersJobOfferIdRoute
   '/job-offers/new': typeof JobOffersNewRoute
   '/job-offers/': typeof JobOffersIndexRoute
@@ -67,6 +76,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/settings'
     | '/job-offers/$jobOfferId'
     | '/job-offers/new'
     | '/job-offers/'
@@ -74,6 +84,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/settings'
     | '/job-offers/$jobOfferId'
     | '/job-offers/new'
     | '/job-offers'
@@ -81,6 +92,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/settings'
     | '/job-offers/$jobOfferId'
     | '/job-offers/new'
     | '/job-offers/'
@@ -89,6 +101,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SettingsRoute: typeof SettingsRoute
   JobOffersJobOfferIdRoute: typeof JobOffersJobOfferIdRoute
   JobOffersNewRoute: typeof JobOffersNewRoute
   JobOffersIndexRoute: typeof JobOffersIndexRoute
@@ -102,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/job-offers/': {
@@ -137,6 +157,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SettingsRoute: SettingsRoute,
   JobOffersJobOfferIdRoute: JobOffersJobOfferIdRoute,
   JobOffersNewRoute: JobOffersNewRoute,
   JobOffersIndexRoute: JobOffersIndexRoute,
