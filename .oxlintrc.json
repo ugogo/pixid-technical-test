@@ -24,5 +24,55 @@
     "public",
     "src/routeTree.gen.ts",
     "src/shared/api/schema.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["src/shared/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/**", "@/routes/**", "@/screens/**", "@/features/**", "@/mocks/**"],
+                "message": "shared/ is the bottom layer: it imports nothing above it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/**", "@/routes/**", "@/screens/**", "@/mocks/**"],
+                "message": "A feature builds on shared/ only: screens assemble features, not the reverse."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/screens/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["@/app/**", "@/routes/**", "@/features/*/**"],
+                "message": "A screen imports a feature through its index.ts, and nothing above it."
+              }
+            ]
+          }
+        ]
+      }
+    }
   ]
 }
