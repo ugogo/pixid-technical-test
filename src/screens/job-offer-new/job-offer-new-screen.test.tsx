@@ -113,6 +113,28 @@ describe('JobOfferNewScreen', () => {
     expect(screen.getByRole('textbox', { name: 'Title' })).toBeInTheDocument();
   });
 
+  test("opens the compensation step for a server error on a field it doesn't show", async () => {
+    const { user } = await renderNewOffer();
+
+    server.use(
+      http.post(`${API_BASE_URL}/job-offers`, () =>
+        HttpResponse.json(
+          {
+            code: 'VALIDATION_ERROR',
+            message: 'Request validation failed',
+            fieldErrors: [{ field: 'compensation[0].amount', message: 'must be at most 1000000' }],
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
+    await user.click(screen.getByRole('button', { name: 'Save and finish later' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('must be at most 1000000');
+    expect(screen.getByRole('button', { name: 'Add a salary' })).toBeInTheDocument();
+  });
+
   test('says when saving fails, and keeps the values', async () => {
     const { user } = await renderNewOffer();
 

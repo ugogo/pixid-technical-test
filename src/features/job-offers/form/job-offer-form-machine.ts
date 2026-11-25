@@ -1,10 +1,13 @@
-import { assign, fromPromise, setup } from 'xstate';
+import { assign, fromPromise, setup, type DoneActorEvent } from 'xstate';
 
-/** A step that holds fields; the review step holds none. */
-export type JobOfferFormStep = 'basicInfo' | 'compensation';
+/** The steps that hold fields, in the order the form shows them; the review step holds none. */
+export const JOB_OFFER_FORM_STEPS = ['basicInfo', 'compensation'] as const;
+export type JobOfferFormStep = (typeof JOB_OFFER_FORM_STEPS)[number];
 
+/** Every step on screen, in order. */
+export const JOB_OFFER_FORM_SCREEN_STEPS = [...JOB_OFFER_FORM_STEPS, 'review'] as const;
 /** The step on screen, kept while the form validates or saves. */
-export type JobOfferFormScreenStep = JobOfferFormStep | 'review';
+export type JobOfferFormScreenStep = (typeof JOB_OFFER_FORM_SCREEN_STEPS)[number];
 
 /** Saving early skips only the rule that a complete offer needs a salary or a bonus. */
 export type SaveMode = 'draft' | 'complete';
@@ -42,6 +45,17 @@ const types: JobOfferFormTypes = {
 
 function notProvided(): never {
   throw new Error('JobOfferForm provides this actor');
+}
+
+/**
+ * One transition per step, in step order, to the step an actor's output names: the user lands on
+ * the first invalid step. Guard and target come from the same step, so they cannot drift apart.
+ */
+function toInvalidStep<Output>(invalidStepOf: (output: Output) => JobOfferFormStep | undefined) {
+  return JOB_OFFER_FORM_STEPS.map((step) => ({
+    guard: ({ event }: { event: DoneActorEvent<Output> }) => invalidStepOf(event.output) === step,
+    target: `editing.${step}`,
+  }));
 }
 
 /**
@@ -140,8 +154,7 @@ export const jobOfferFormMachine = setup({
         src: 'validateForSave',
         input: ({ context }) => ({ mode: context.saveMode }),
         onDone: [
-          { guard: ({ event }) => event.output === 'basicInfo', target: 'editing.basicInfo' },
-          { guard: ({ event }) => event.output === 'compensation', target: 'editing.compensation' },
+          ...toInvalidStep((firstInvalidStep: JobOfferFormStep | undefined) => firstInvalidStep),
           { target: 'saving' },
         ],
         onError: 'editing.lastStep',
@@ -160,17 +173,9 @@ export const jobOfferFormMachine = setup({
                 event.output.type === 'saved' ? event.output.jobOfferId : undefined,
             }),
           },
-          // One transition per step, in step order, so the user lands on the first error.
-          {
-            guard: ({ event }) =>
-              event.output.type === 'invalid' && event.output.step === 'basicInfo',
-            target: 'editing.basicInfo',
-          },
-          {
-            guard: ({ event }) =>
-              event.output.type === 'invalid' && event.output.step === 'compensation',
-            target: 'editing.compensation',
-          },
+          ...toInvalidStep((outcome: SaveOutcome) =>
+            outcome.type === 'invalid' ? outcome.step : undefined,
+          ),
           { guard: ({ event }) => event.output.type === 'conflict', target: 'conflict' },
           { target: 'editing.lastStep', actions: assign({ hasSaveFailed: true }) },
         ],

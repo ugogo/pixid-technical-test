@@ -119,7 +119,10 @@ function endpoint(resolve: (context: ResolverContext) => Response | Promise<Resp
     }
 
     try {
-      return await resolve({ companyId, request, params });
+      // Awaited inside `try`, so a rejected `ApiError` is caught below.
+      const response = await resolve({ companyId, request, params });
+
+      return response;
     } catch (error) {
       if (error instanceof ApiError) return HttpResponse.json(error.body, { status: error.status });
 

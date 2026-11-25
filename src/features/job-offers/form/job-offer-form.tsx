@@ -17,6 +17,8 @@ import { BasicInfoStep } from './basic-info-step';
 import { CompensationStep } from './compensation-step';
 import { useFormErrorText } from './form-text-field';
 import {
+  JOB_OFFER_FORM_SCREEN_STEPS,
+  JOB_OFFER_FORM_STEPS,
   jobOfferFormMachine,
   type JobOfferFormScreenStep,
   type JobOfferFormStep,
@@ -28,6 +30,7 @@ import {
   toFormField,
   toJobOfferFormValues,
   toJobOfferRequest,
+  type JobOfferFormField,
   type JobOfferFormOutput,
   type JobOfferFormValues,
   type JobOfferRequest,
@@ -35,12 +38,20 @@ import {
 
 type JobOfferForm = UseFormReturn<JobOfferFormValues, unknown, JobOfferFormOutput>;
 
-const SCREEN_STEPS: JobOfferFormScreenStep[] = ['basicInfo', 'compensation', 'review'];
-const STEP_FIELDS = { basicInfo: ['title', 'location'], compensation: ['compensation'] } as const;
+/** The form's top-level fields, by the step that shows them. */
+const STEP_FIELDS = {
+  basicInfo: ['title', 'location'],
+  compensation: ['compensation'],
+} as const satisfies Record<JobOfferFormStep, readonly JobOfferFormField[]>;
 
-/** The step that shows a server field: compensation entries, or the basic information. */
+/** The step that shows a server field, found by its top-level field; the first step otherwise. */
 function stepOfServerField(serverField: string): JobOfferFormStep {
-  return serverField.startsWith('compensation') ? 'compensation' : 'basicInfo';
+  const [topLevelField] = serverField.split(/[.[]/, 1);
+  const step = JOB_OFFER_FORM_STEPS.find((candidate) =>
+    STEP_FIELDS[candidate].some((field) => field === topLevelField),
+  );
+
+  return step ?? 'basicInfo';
 }
 
 /**
@@ -95,7 +106,9 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   async function isStepValid(step: JobOfferFormStep) {
     clearErrors(`root.${step}`);
 
-    if (!(await trigger(STEP_FIELDS[step], { shouldFocus: true }))) return false;
+    const areFieldsValid = await trigger(STEP_FIELDS[step], { shouldFocus: true });
+
+    if (!areFieldsValid) return false;
     if (step === 'basicInfo' || hasCompensation(getValues())) return true;
 
     setError('root.compensation', { type: 'required', message: 'compensation-required' });
@@ -109,12 +122,16 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
         validateForSave: fromPromise(async ({ input }) => {
           clearErrors('root');
 
-          if (!(await trigger(STEP_FIELDS.basicInfo))) return 'basicInfo';
-          if (input.mode === 'draft') {
-            return (await trigger(STEP_FIELDS.compensation)) ? undefined : 'compensation';
-          }
+          const isBasicInfoValid = await trigger(STEP_FIELDS.basicInfo);
 
-          return (await isStepValid('compensation')) ? undefined : 'compensation';
+          if (!isBasicInfoValid) return 'basicInfo';
+
+          // Saving early checks the compensation fields, not that there is a salary or a bonus.
+          const isCompensationValid = await (input.mode === 'draft'
+            ? trigger(STEP_FIELDS.compensation)
+            : isStepValid('compensation'));
+
+          return isCompensationValid ? undefined : 'compensation';
         }),
         save: fromPromise(async () => {
           try {
@@ -163,8 +180,8 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
         variant="outlined"
       >
         <Stack spacing={3}>
-          <Stepper activeStep={SCREEN_STEPS.indexOf(shownStep)} alternativeLabel>
-            {SCREEN_STEPS.map((step) => (
+          <Stepper activeStep={JOB_OFFER_FORM_SCREEN_STEPS.indexOf(shownStep)} alternativeLabel>
+            {JOB_OFFER_FORM_SCREEN_STEPS.map((step) => (
               <Step key={step}>
                 <StepLabel>{t(`job-offer-form.steps.${STEP_LABEL_KEYS[step]}`)}</StepLabel>
               </Step>
