@@ -6,17 +6,15 @@ import type { paths } from './schema';
 export const API_BASE_URL = '/api/v1';
 
 /**
- * The swagger's paths without `X-Company-Id`, which the client sends on every request,
- * so no call passes it; any other header stays as the swagger declares it.
+ * The swagger marks `X-Company-Id` as required on every operation, so its generated types would
+ * make each call pass it. The client sends it itself, so calls see the operations without it.
  */
-type WithoutCompanyHeader<Entry> = Entry extends { header: infer Header }
-  ? Omit<Entry, 'header'> & { header?: Omit<Header, 'X-Company-Id'> }
-  : Entry extends { parameters: unknown }
-    ? Omit<Entry, 'parameters'> & { parameters: WithoutCompanyHeader<Entry['parameters']> }
-    : Entry;
+type WithoutHeader<Operation> = Operation extends { parameters: infer Parameters }
+  ? Omit<Operation, 'parameters'> & { parameters: Omit<Parameters, 'header'> }
+  : Operation;
 
 type ClientPaths = {
-  [Path in keyof paths]: { [Key in keyof paths[Path]]: WithoutCompanyHeader<paths[Path][Key]> };
+  [Path in keyof paths]: { [Method in keyof paths[Path]]: WithoutHeader<paths[Path][Method]> };
 };
 
 export const apiClient = createClient<ClientPaths>({

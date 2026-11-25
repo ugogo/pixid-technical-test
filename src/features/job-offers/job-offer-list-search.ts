@@ -25,22 +25,28 @@ export type JobOfferListSearch = z.infer<typeof jobOfferListSearchSchema>;
 
 export const DEFAULT_JOB_OFFER_LIST_SEARCH = jobOfferListSearchSchema.parse({});
 
-/** Midnight of a `YYYY-MM-DD` day in the user's time zone, `days` later. */
-function startOfDay(day: string, days = 0) {
-  const date = new Date(`${day}T00:00:00`);
+/**
+ * The instant a day picked in a date field begins for the user, as the ISO date-time the API
+ * compares `createdAt` with. A date field gives a day with no time zone (`2026-10-31`); in Paris
+ * that day begins at `2026-10-30T23:00:00.000Z`. `daysLater` moves to a following day first.
+ */
+function startOfDay(day: string, daysLater = 0) {
+  const date = new Date(`${day}T00:00:00`); // no `Z`: read in the user's time zone
 
-  date.setDate(date.getDate() + days);
+  date.setDate(date.getDate() + daysLater);
 
   return date.toISOString();
 }
 
-/** The request for a URL state: "from" is inclusive, and so is "to", whole day included. */
+/** The request for a URL state: both picked days are included in full. */
 export function toJobOfferListQuery(search: JobOfferListSearch): JobOfferListQuery {
   const { createdFrom, createdTo, ...rest } = search;
 
   return {
     ...rest,
+    // `createdAfter` is inclusive: "from 1 October" starts at the beginning of 1 October.
     ...(createdFrom && { createdAfter: startOfDay(createdFrom) }),
+    // `createdBefore` is exclusive: "to 31 October" stops at the beginning of 1 November.
     ...(createdTo && { createdBefore: startOfDay(createdTo, 1) }),
   };
 }
