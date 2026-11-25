@@ -12,7 +12,7 @@ import { useDeleteJobOffer } from './api/use-job-offer-mutations';
 export function DeleteJobOfferButton({ jobOfferId }: { jobOfferId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const deletion = useDeleteJobOffer(jobOfferId);
+  const deletion = useDeleteJobOffer();
   const [isConfirming, setIsConfirming] = useState(false);
 
   return (

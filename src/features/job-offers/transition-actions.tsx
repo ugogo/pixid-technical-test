@@ -27,7 +27,7 @@ interface TransitionActionsProps {
  */
 export function TransitionActions({ jobOfferId, transitions, isComplete }: TransitionActionsProps) {
   const { t } = useTranslation();
-  const transition = useTransitionJobOffer(jobOfferId);
+  const transition = useTransitionJobOffer();
   const [selected, setSelected] = useState<Transition>();
 
   function label({ action, targetStatus }: Transition) {

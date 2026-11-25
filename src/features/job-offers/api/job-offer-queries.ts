@@ -8,7 +8,7 @@ const byId = (jobOfferId: string) => ({ params: { path: { jobOfferId } } });
 
 /** The offers' reads, as options a screen passes to `useQuery`; their keys are what writes refresh. */
 export const jobOfferQueries = {
-  /** The key every list shares, whatever its query: `['get', '/job-offers']`. */
+  // `[method, path]`: openapi-react-query appends the request to it, so it prefixes every list's key.
   lists: () => $api.queryOptions('get', '/job-offers').queryKey,
   // The previous page stays on screen while the next one loads.
   list: (query: JobOfferListQuery) =>
