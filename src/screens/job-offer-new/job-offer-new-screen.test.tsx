@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, onTestFinished, test } from 'vitest';
 
+import { validationFailed } from '@/mocks/api-error';
 import { server } from '@/mocks/node';
 import { API_BASE_URL } from '@/shared/api/client';
 import { CURRENT_COMPANY_ID } from '@/shared/api/current-company';
@@ -14,6 +15,17 @@ async function renderNewOffer() {
   await screen.findByRole('textbox', { name: 'Title' });
 
   return { ...view, user: userEvent.setup() };
+}
+
+/** The server refuses the next creation with a 422 on one field. */
+function refuseCreation(field: string, message: string) {
+  const refusal = validationFailed([{ field, message }]);
+
+  server.use(
+    http.post(`${API_BASE_URL}/job-offers`, () =>
+      HttpResponse.json(refusal.body, { status: refusal.status }),
+    ),
+  );
 }
 
 async function expectOfferOpened(router: Awaited<ReturnType<typeof renderNewOffer>>['router']) {
@@ -97,18 +109,7 @@ describe('JobOfferNewScreen', () => {
   test("shows the server's field error on its field, on its step", async () => {
     const { user } = await renderNewOffer();
 
-    server.use(
-      http.post(`${API_BASE_URL}/job-offers`, () =>
-        HttpResponse.json(
-          {
-            code: 'VALIDATION_ERROR',
-            message: 'Request validation failed',
-            fieldErrors: [{ field: 'title', message: 'must not contain HTML' }],
-          },
-          { status: 422 },
-        ),
-      ),
-    );
+    refuseCreation('title', 'must not contain HTML');
     await user.type(screen.getByRole('textbox', { name: 'Title' }), '<b>Boulanger</b>');
     await user.click(screen.getByRole('button', { name: 'Save and finish later' }));
 
@@ -119,18 +120,7 @@ describe('JobOfferNewScreen', () => {
   test("opens the compensation step for a server error on a field it doesn't show", async () => {
     const { user } = await renderNewOffer();
 
-    server.use(
-      http.post(`${API_BASE_URL}/job-offers`, () =>
-        HttpResponse.json(
-          {
-            code: 'VALIDATION_ERROR',
-            message: 'Request validation failed',
-            fieldErrors: [{ field: 'compensation[0].amount', message: 'must be at most 1000000' }],
-          },
-          { status: 422 },
-        ),
-      ),
-    );
+    refuseCreation('compensation[0].amount', 'must be at most 1000000');
     await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
     await user.click(screen.getByRole('button', { name: 'Save and finish later' }));
 

@@ -134,7 +134,7 @@
   },
   "job-offer-form": {
     "steps": {
-      "basic-info": "Basic information",
+      "basicInfo": "Basic information",
       "compensation": "Compensation",
       "review": "Review"
     },

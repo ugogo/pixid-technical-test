@@ -34,22 +34,7 @@ export function CompensationStep() {
       >
         {salaryEntries.fields.map((salaryEntry, index) => (
           <Grid container key={salaryEntry.id} spacing={2} sx={{ alignItems: 'flex-start' }}>
-            <Grid size={{ xs: 12, sm: 4 }}>
-              <FormTextField
-                label={t('job-offer-form.fields.amount')}
-                name={`compensation.salaryEntries.${index}.amount`}
-                required
-                slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormTextField
-                label={t('job-offer-form.fields.currency')}
-                name={`compensation.salaryEntries.${index}.currency`}
-                required
-                slotProps={{ htmlInput: { maxLength: 3 } }}
-              />
-            </Grid>
+            <EntryAmountFields entryList="salaryEntries" index={index} />
             <Grid size={{ xs: 6, sm: 4 }}>
               <FormTextField
                 label={t('job-offer-form.fields.salary-type')}
@@ -83,7 +68,8 @@ export function CompensationStep() {
       >
         {bonusEntries.fields.map((bonusEntry, index) => (
           <Grid container key={bonusEntry.id} spacing={2} sx={{ alignItems: 'flex-start' }}>
-            <Grid size={{ xs: 12, sm: 4 }}>
+            <EntryAmountFields entryList="bonusEntries" index={index} />
+            <Grid size={{ xs: 6, sm: 4 }}>
               <FormTextField
                 label={t('job-offer-form.fields.bonus-type')}
                 name={`compensation.bonusEntries.${index}.type`}
@@ -95,22 +81,6 @@ export function CompensationStep() {
                   </MenuItem>
                 ))}
               </FormTextField>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 4 }}>
-              <FormTextField
-                label={t('job-offer-form.fields.amount')}
-                name={`compensation.bonusEntries.${index}.amount`}
-                required
-                slotProps={{ htmlInput: { inputMode: 'decimal' } }}
-              />
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <FormTextField
-                label={t('job-offer-form.fields.currency')}
-                name={`compensation.bonusEntries.${index}.currency`}
-                required
-                slotProps={{ htmlInput: { maxLength: 3 } }}
-              />
             </Grid>
             <Grid size={{ xs: 12, sm: 1 }}>
               <IconButton
@@ -130,6 +100,37 @@ export function CompensationStep() {
         ))}
       </EntryListSection>
     </Stack>
+  );
+}
+
+interface EntryAmountFieldsProps {
+  entryList: 'salaryEntries' | 'bonusEntries';
+  index: number;
+}
+
+/** A salary or bonus row's amount and currency. */
+function EntryAmountFields({ entryList, index }: EntryAmountFieldsProps) {
+  const { t } = useTranslation();
+
+  return (
+    <>
+      <Grid size={{ xs: 12, sm: 4 }}>
+        <FormTextField
+          label={t('job-offer-form.fields.amount')}
+          name={`compensation.${entryList}.${index}.amount`}
+          required
+          slotProps={{ htmlInput: { inputMode: 'decimal' } }}
+        />
+      </Grid>
+      <Grid size={{ xs: 6, sm: 3 }}>
+        <FormTextField
+          label={t('job-offer-form.fields.currency')}
+          name={`compensation.${entryList}.${index}.currency`}
+          required
+          slotProps={{ htmlInput: { maxLength: 3 } }}
+        />
+      </Grid>
+    </>
   );
 }
 

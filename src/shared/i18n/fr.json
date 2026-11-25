@@ -134,7 +134,7 @@
   },
   "job-offer-form": {
     "steps": {
-      "basic-info": "Informations générales",
+      "basicInfo": "Informations générales",
       "compensation": "Rémunération",
       "review": "Vérification"
     },

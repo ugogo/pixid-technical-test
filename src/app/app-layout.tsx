@@ -1,8 +1,9 @@
-import { AppBar, Box, Button, Container, Stack, Toolbar, Typography } from '@mui/material';
-import { Link, Outlet } from '@tanstack/react-router';
+import { AppBar, Box, Container, Stack, Toolbar, Typography } from '@mui/material';
+import { Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import { LanguageSelect } from '@/shared/i18n/language-select';
+import { RouterButton } from '@/shared/ui/router-link';
 
 /** The app bar and the page below it. */
 export function AppLayout() {
@@ -21,9 +22,7 @@ export function AppLayout() {
             {t('app.title')}
           </Typography>
           <Stack component="nav" direction="row" spacing={1}>
-            <Button component={Link} to="/job-offers">
-              {t('app.navigation.job-offers')}
-            </Button>
+            <RouterButton to="/job-offers">{t('app.navigation.job-offers')}</RouterButton>
           </Stack>
           <LanguageSelect />
         </Toolbar>

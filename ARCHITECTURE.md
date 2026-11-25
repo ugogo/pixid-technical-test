@@ -88,12 +88,12 @@ Each piece of state has one owner.
 
 | State                                     | Owner                                                                                                                                                           |
 | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The flow: step, checking, saving, failure | `JobOfferForm`'s own state: the step on screen, a `FormPhase`, whether the last save failed                                                                     |
+| The flow: step, checking, saving, failure | `JobOfferForm`'s own state: the step on screen and a `FormPhase` (editing, checking, saving, save failed, conflict)                                             |
 | Values and field errors                   | react-hook-form; a hidden step's fields stay registered, so their values survive                                                                                |
 | The request and the cache update          | The screen's mutation, passed to the form as an async `onSave`                                                                                                  |
 | Whether saving early is offered           | On create, the company's `partialSaveEnabled`, read by the screen; on edit, always, since the offer's own workflow is not exposed (see the table below)         |
 | Create or edit                            | Props: an `offer` means edit, and the starting values come from `toJobOfferFormValues(offer)`; without one, empty values                                        |
-| Leaving with unsaved changes              | TanStack Router's `useBlocker`, while the form is dirty; a saved form opens the offer through `<Navigate replace ignoreBlocker>`                                |
+| Leaving with unsaved changes              | TanStack Router's `useBlocker`, while the form is dirty; a saved form opens the offer with `navigate({ replace: true, ignoreBlocker: true })`                   |
 | An offer no longer editable               | The edit route's loader, which sends it back to its detail. The route is `$jobOfferId_.edit.tsx`, so the edit page replaces the detail instead of nesting in it |
 
 ### The flow
@@ -110,8 +110,8 @@ Create / Save changes (review) ─────▶ check (all rules) ───┴
                                                                             ─▶ other: the same step, with a message
 ```
 
-- **No state machine library**: the flow is linear, and four `useState`s hold it in the component that already holds the form. An XState machine was tried first; it repeated what react-hook-form and the mutation already track, and needed a history state to remember the step while saving.
-- **No double send**: every button is disabled while the form checks or saves (`FormPhase`), and submitting is ignored then.
+- **No state machine library**: the flow is linear, and two `useState`s hold it in the component that already holds the form. An XState machine was tried first; it repeated what react-hook-form and the mutation already track, and needed a history state to remember the step while saving.
+- **No double send**: every button is disabled while the form checks or saves (`FormPhase`).
 - **A 422 picks its step**: the step of each field comes from the form's own step-to-fields map, and the first step holding one wins.
 - **A 422 without a field** the form shows (`compensation`, `location.address`) goes to an error slot at the top of its step (`root.basicInfo`, `root.compensation`).
 - **Server messages** show as the server words them, in English: the client validates the same rules first, so a 422 is rare. The schema's own messages are keys under `job-offer-form.errors`.

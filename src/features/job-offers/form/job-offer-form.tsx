@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Alert, Button, Paper, Stack, Step, StepLabel, Stepper, Typography } from '@mui/material';
-import { Navigate, useBlocker } from '@tanstack/react-router';
+import { useBlocker, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { FormProvider, useForm, type UseFormReturn } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { ApiRequestError } from '@/shared/api/api-request-error';
+import { isOneOf } from '@/shared/is-one-of';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
 import { RouterLink } from '@/shared/ui/router-link';
 
@@ -25,8 +26,6 @@ import {
   type JobOfferFormValues,
   type JobOfferRequest,
 } from './job-offer-form-schema';
-
-type JobOfferForm = UseFormReturn<JobOfferFormValues, unknown, JobOfferFormOutput>;
 
 /** The steps that hold fields, in the order the form shows them; the review step holds none. */
 const STEPS = ['basicInfo', 'compensation'] as const;
@@ -48,14 +47,23 @@ const PREVIOUS_STEP = {
 /** Saving early skips only the rule that a complete offer needs a salary or a bonus. */
 type SaveMode = 'draft' | 'complete';
 
-/** What the form is busy with. A conflict (a 409) ends it: the offer can no longer be edited. */
-type FormPhase = 'editing' | 'checkingStep' | 'saving' | 'conflict';
+/**
+ * What the form is doing, or how its last save ended. A conflict (a 409) ends it: the offer can no
+ * longer be edited.
+ */
+type FormPhase = 'editing' | 'checkingStep' | 'saving' | 'saveFailed' | 'conflict';
 
 /** Why a save failed, as the form reads the server's answer. */
 type SaveFailure =
   | { type: 'invalid'; step: JobOfferFormStep }
   | { type: 'conflict' }
   | { type: 'failed' };
+
+const PHASE_AFTER_SAVE_FAILURE = {
+  invalid: 'editing',
+  conflict: 'conflict',
+  failed: 'saveFailed',
+} as const satisfies Record<SaveFailure['type'], FormPhase>;
 
 /** The form's top-level fields, by the step that shows them. */
 const STEP_FIELDS = {
@@ -66,9 +74,7 @@ const STEP_FIELDS = {
 /** The step that shows a server field, found by its top-level field; the first step otherwise. */
 function stepOfServerField(serverField: string): JobOfferFormStep {
   const [topLevelField] = serverField.split(/[.[]/, 1);
-  const step = STEPS.find((candidate) =>
-    STEP_FIELDS[candidate].some((field) => field === topLevelField),
-  );
+  const step = STEPS.find((candidate) => isOneOf(STEP_FIELDS[candidate], topLevelField));
 
   return step ?? 'basicInfo';
 }
@@ -77,7 +83,10 @@ function stepOfServerField(serverField: string): JobOfferFormStep {
  * Puts a failed save's field errors on the form: on their fields, or, for a field the form does
  * not show, at the top of its step. Says why the save failed.
  */
-function applySaveError(error: unknown, jobOfferForm: JobOfferForm): SaveFailure {
+function applySaveError(
+  error: unknown,
+  jobOfferForm: UseFormReturn<JobOfferFormValues, unknown, JobOfferFormOutput>,
+): SaveFailure {
   if (!(error instanceof ApiRequestError)) return { type: 'failed' };
   if (error.status === 409) return { type: 'conflict' };
   if (error.status !== 422 || error.fieldErrors.length === 0) return { type: 'failed' };
@@ -94,10 +103,9 @@ function applySaveError(error: unknown, jobOfferForm: JobOfferForm): SaveFailure
     return step;
   });
 
-  return {
-    type: 'invalid',
-    step: stepsWithErrors.includes('basicInfo') ? 'basicInfo' : 'compensation',
-  };
+  const firstStepWithErrors = STEPS.find((step) => stepsWithErrors.includes(step));
+
+  return { type: 'invalid', step: firstStepWithErrors ?? 'basicInfo' };
 }
 
 interface JobOfferFormProps {
@@ -121,14 +129,22 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   });
   const { clearErrors, formState, getValues, setError, trigger } = jobOfferForm;
 
-  /** Checks a step's fields; leaving the compensation step also needs a salary or a bonus. */
-  async function isStepValid(step: JobOfferFormStep) {
+  const navigate = useNavigate();
+  const [shownStep, setShownStep] = useState<JobOfferFormScreenStep>('basicInfo');
+  const [phase, setPhase] = useState<FormPhase>('editing');
+  const isBusy = phase === 'checkingStep' || phase === 'saving' || phase === 'conflict';
+
+  /**
+   * Checks a step's fields. Leaving the compensation step also needs a salary or a bonus, unless
+   * the offer is saved early.
+   */
+  async function isStepValid(step: JobOfferFormStep, mode: SaveMode = 'complete') {
     clearErrors(`root.${step}`);
 
     const areFieldsValid = await trigger(STEP_FIELDS[step], { shouldFocus: true });
 
     if (!areFieldsValid) return false;
-    if (step === 'basicInfo' || hasCompensation(getValues())) return true;
+    if (step === 'basicInfo' || mode === 'draft' || hasCompensation(getValues())) return true;
 
     setError('root.compensation', { type: 'required', message: 'compensation-required' });
     return false;
@@ -138,23 +154,14 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   async function firstInvalidStep(mode: SaveMode): Promise<JobOfferFormStep | undefined> {
     clearErrors('root');
 
-    const isBasicInfoValid = await trigger(STEP_FIELDS.basicInfo);
+    const isBasicInfoValid = await isStepValid('basicInfo', mode);
 
     if (!isBasicInfoValid) return 'basicInfo';
 
-    // Saving early checks the compensation fields, not that there is a salary or a bonus.
-    const isCompensationValid = await (mode === 'draft'
-      ? trigger(STEP_FIELDS.compensation)
-      : isStepValid('compensation'));
+    const isCompensationValid = await isStepValid('compensation', mode);
 
     return isCompensationValid ? undefined : 'compensation';
   }
-
-  const [shownStep, setShownStep] = useState<JobOfferFormScreenStep>('basicInfo');
-  const [phase, setPhase] = useState<FormPhase>('editing');
-  const [hasSaveFailed, setHasSaveFailed] = useState(false);
-  const [savedJobOfferId, setSavedJobOfferId] = useState<string>();
-  const isBusy = phase !== 'editing';
 
   async function goPastStep(step: JobOfferFormStep) {
     setPhase('checkingStep');
@@ -167,7 +174,6 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
 
   async function save(mode: SaveMode) {
     setPhase('saving');
-    setHasSaveFailed(false);
 
     const invalidStep = await firstInvalidStep(mode);
 
@@ -177,39 +183,38 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
       return;
     }
 
-    try {
-      const saved = await onSave(toJobOfferRequest(jobOfferFormSchema.parse(getValues())));
-
-      setSavedJobOfferId(saved.id);
-    } catch (error) {
+    const request = toJobOfferRequest(jobOfferFormSchema.parse(getValues()));
+    const saved = await onSave(request).catch((error: unknown) => {
       const failure = applySaveError(error, jobOfferForm);
 
-      setPhase(failure.type === 'conflict' ? 'conflict' : 'editing');
-      setHasSaveFailed(failure.type === 'failed');
       if (failure.type === 'invalid') setShownStep(failure.step);
-    }
+      setPhase(PHASE_AFTER_SAVE_FAILURE[failure.type]);
+    });
+
+    if (!saved) return;
+
+    // The saved form is still dirty: opening the saved offer skips the leave prompt.
+    await navigate({
+      to: '/job-offers/$jobOfferId',
+      params: { jobOfferId: saved.id },
+      replace: true,
+      ignoreBlocker: true,
+    });
   }
 
   // Read during render: react-hook-form tracks `isDirty` only once something reads it.
-  const { isDirty } = formState;
   const leaveBlocker = useBlocker({
-    shouldBlockFn: () => isDirty,
-    enableBeforeUnload: () => isDirty,
+    shouldBlockFn: blockLeaving,
+    disabled: !formState.isDirty,
     withResolver: true,
   });
 
-  if (savedJobOfferId) {
-    return (
-      // A saved form is still dirty: opening the saved offer skips the leave prompt.
-      <Navigate
-        ignoreBlocker
-        params={{ jobOfferId: savedJobOfferId }}
-        replace
-        to="/job-offers/$jobOfferId"
-      />
-    );
-  }
-
+  const submitLabelKey =
+    shownStep !== 'review'
+      ? 'job-offer-form.next'
+      : offer
+        ? 'job-offer-form.save'
+        : 'job-offer-form.create';
   const stepError =
     shownStep === 'review' ? undefined : formState.errors.root?.[shownStep]?.message;
 
@@ -220,7 +225,6 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          if (isBusy) return;
           if (shownStep === 'review') void save('complete');
           else void goPastStep(shownStep);
         }}
@@ -231,11 +235,13 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
           <Stepper activeStep={SCREEN_STEPS.indexOf(shownStep)} alternativeLabel>
             {SCREEN_STEPS.map((step) => (
               <Step key={step}>
-                <StepLabel>{t(`job-offer-form.steps.${STEP_LABEL_KEYS[step]}`)}</StepLabel>
+                <StepLabel>{t(`job-offer-form.steps.${step}`)}</StepLabel>
               </Step>
             ))}
           </Stepper>
-          {hasSaveFailed && <Alert severity="error">{t('job-offer-form.save-failed')}</Alert>}
+          {phase === 'saveFailed' && (
+            <Alert severity="error">{t('job-offer-form.save-failed')}</Alert>
+          )}
           {phase === 'conflict' && (
             <Alert
               action={
@@ -270,20 +276,14 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
                 {t('job-offer-form.save-early')}
               </Button>
             )}
-            {shownStep === 'review' ? (
-              <Button
-                disabled={isBusy}
-                loading={phase === 'saving'}
-                type="submit"
-                variant="contained"
-              >
-                {t(offer ? 'job-offer-form.save' : 'job-offer-form.create')}
-              </Button>
-            ) : (
-              <Button disabled={isBusy} type="submit" variant="contained">
-                {t('job-offer-form.next')}
-              </Button>
-            )}
+            <Button
+              disabled={isBusy}
+              loading={shownStep === 'review' && phase === 'saving'}
+              type="submit"
+              variant="contained"
+            >
+              {t(submitLabelKey)}
+            </Button>
           </Stack>
         </Stack>
       </Paper>
@@ -299,11 +299,10 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
   );
 }
 
-const STEP_LABEL_KEYS = {
-  basicInfo: 'basic-info',
-  compensation: 'compensation',
-  review: 'review',
-} as const satisfies Record<JobOfferFormScreenStep, string>;
+/** Any navigation away from a dirty form asks first; the blocker is off while the form is clean. */
+function blockLeaving() {
+  return true;
+}
 
 /** The offer as it will be saved: its title, then the same blocks as its detail page. */
 function JobOfferReview({ values }: { values: JobOfferFormValues }) {
