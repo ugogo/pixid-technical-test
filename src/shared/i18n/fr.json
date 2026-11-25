@@ -138,6 +138,7 @@
       "compensation": "Rémunération",
       "review": "Vérification"
     },
+    "step-count": "Étape {{number}} sur {{count}}",
     "fields": {
       "title": "Intitulé",
       "location": "Lieu",
@@ -156,6 +157,7 @@
       "currency": "Devise",
       "description": "Description"
     },
+    "character-count": "{{count}}/{{limit}} caractères",
     "add-salary": "Ajouter un salaire",
     "add-bonus": "Ajouter une prime",
     "remove-salary": "Retirer le salaire {{number}}",
@@ -182,7 +184,8 @@
       "country-code": "Deux majuscules, comme FR.",
       "currency-code": "Trois majuscules, comme EUR.",
       "amount": "Un nombre, 0 ou plus.",
-      "compensation-required": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
+      "compensation-required": "Ajoutez un salaire ou une prime.",
+      "compensation-required-or-save-early": "Ajoutez un salaire ou une prime, ou enregistrez et finissez plus tard."
     }
   },
   "settings": {
