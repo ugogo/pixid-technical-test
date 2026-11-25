@@ -2,7 +2,7 @@
 
 A React 19 + MUI app to manage job offers through a per-company workflow, against a mocked API built from `job-offer-swagger.yml`.
 
-**Built so far**: the scaffold, the mock API, the list, the detail and the create and edit form. The sections marked _planned_ describe the target for the settings screen, and change as they land.
+It covers every page of the brief: the offer list, an offer's detail, the create and edit form, and the company's workflow settings. [README.md](README.md) says how to run it; this file says why it is built this way.
 
 ## Stack
 
@@ -30,17 +30,17 @@ src/
 ├── app/                    router, providers, MUI theme, root error boundary, layout
 ├── routes/                 a route validates its params and passes one screen as `component`
 ├── screens/                one folder per page; a screen assembles feature blocks
+│   ├── company-settings/
 │   ├── job-offer/          detail
 │   ├── job-offer-edit/
 │   ├── job-offer-new/
-│   ├── job-offers/         list
-│   └── settings/
+│   └── job-offers/         list
 ├── features/               blocks the screens build with, exported through `index.ts`
 │   ├── job-offers/         API hooks, StatusChip, TransitionActions, JobOfferForm, form schema
 │   └── company-settings/   configuration query, WorkflowSettingsForm
 ├── shared/
 │   ├── api/                openapi-fetch client and its TanStack Query bindings, generated types, enum values
-│   ├── ui/                 presentational pieces over MUI (page layout, skeletons)
+│   ├── ui/                 small pieces over MUI: router links and buttons, a page section, a confirm dialog
 │   ├── i18n/               setup, language switcher, `fr.json`, `en.json`
 │   ├── is-one-of.ts        narrows a value to one of a list
 │   └── use-debounce.ts     a value once it stops changing
@@ -59,7 +59,7 @@ src/
 - **Errors**: openapi-fetch resolves an error status instead of throwing. A client middleware throws an `ApiRequestError` that keeps the status and the API's error body, which the retry rule and the error messages read. The library types errors as the API's error body, so code reads them through `instanceof ApiRequestError`, never through that type.
 - **Query keys**: the library's own, `[method, path, init]`, read from the options rather than written inline. A feature's query file is the one place that builds them (`jobOfferQueries.detail(id).queryKey`); `jobOfferQueries.lists()` is `['get', '/job-offers']`, the prefix every list shares.
 - **Reads**: the screen passes `jobOfferQueries.detail(id)`, `.transitions(id)` and `.history(id)` to `useQuery`. The list keeps the previous page on screen while the next one loads (`placeholderData: keepPreviousData`).
-- **Writes**: a mutation hook per endpoint (transition and delete so far; create, update and settings come with their screens). A transition answers with the updated offer, which goes straight into the detail; its transitions, its history and every list are refetched, one invalidation per endpoint since the keys are not nested. A delete removes the detail from the cache, so a mounted detail does not refetch a 404, and invalidates the lists. A create invalidates the lists.
+- **Writes**: a mutation hook per endpoint. A transition answers with the updated offer, which goes straight into the detail; its transitions, its history and every list are refetched, one invalidation per endpoint since the keys are not nested. A delete removes the detail from the cache, so a mounted detail does not refetch a 404, and invalidates the lists. A create or an update puts the answer in the detail and invalidates the lists. Saving the settings puts the answer in the configuration's cache, which the new offer form reads.
 - **Not optimistic**: a write changes several queries at once (the offer, its transitions, its history, its place in the list) and the server can refuse it (409, 422). Waiting for the answer keeps the screen truthful for a delay of a few hundred milliseconds.
 - **Retries and failures**: a query retries once on a network failure or a 5xx, never on a 4xx. A failed first load throws to the route's error boundary; a failed refetch keeps the data on screen.
 - **Company**: `X-Company-Id` comes from `CURRENT_COMPANY_ID`, a const in `shared/api/` that the client sets on every request; the client's types leave the header out of each call. It stands in for the signed-in user's session, which would provide it in a real project; auth is out of scope.
@@ -124,6 +124,12 @@ Create / Save changes (review) ─────▶ check (all rules) ───┴
 - **Address lines** are one multiline field, at most 3 lines, split when sending.
 - **Validation mode**: `onBlur`, so no error shows before the user leaves a field. Not `onTouched`, which validates a whole salary or bonus list when a row is added, the new empty row included. A step's first invalid field takes the focus.
 
+## Settings
+
+- **One form for three flags** (`WorkflowSettingsForm`): approval, partial save, manual posting, each a checkbox with what it does. Save stays disabled until a flag changes, and a saved form starts clean again from the server's answer.
+- **Changes apply to new offers only**, as the swagger states: the page says so, and the mock keeps each offer on the configuration it was created with.
+- The configuration is one query, shared with the new offer form: saving it there is enough for that form to offer, or stop offering, to save early.
+
 ## List
 
 - **Search params mirror the API's query** (`page` from 0, `sort` as `-createdAt`, `status` as a list), validated by a zod schema on the route. Two exceptions: `createdFrom` and `createdTo` hold days, not instants. A value the URL cannot hold falls back to its default, and defaults stay out of the URL.
@@ -175,8 +181,16 @@ The swagger leaves some behaviours unstated. A mock must answer one way, so the 
 ## Loading and errors
 
 - A screen shows a skeleton of its own layout on its first load; the list then keeps its rows while a filter or a page change loads.
+- A route's loader may start a screen's request (on hover of a link, since links preload on intent) but only waits for it when it must decide something first: the edit route waits for the offer to redirect one that can no longer be edited.
 - A route's `errorComponent` catches what a screen throws; the root one catches the rest. Its retry resets the failed queries and loads the route again.
 - A failed write shows its message where it was triggered: on the field, at the top of the step, or in a snackbar for a transition.
+
+## Accessibility and small screens
+
+- **Checked by a tool, not by eye**: `src/screens/accessibility.test.tsx` runs axe's WCAG 2.1 A and AA rules on every page once it has loaded, and on each step of the form. Colour contrast is the one rule it cannot run, since the test DOM lays nothing out. It was run with axe in a browser on every page instead: MUI's default primary, info and warning colours missed 4.5:1, so the theme sets darker ones (`app/theme.ts`).
+- **Lint**: oxlint's `jsx-a11y` rules run on every file.
+- **In the markup**: every field has a label, a checkbox's description is linked to it (`aria-describedby`), errors are announced through MUI's `role="alert"`, a step's first invalid field takes the focus, and lists and headings are real ones.
+- **Phone width**: pages stack in one column, the app bar wraps to two rows, and the list's table scrolls sideways inside its card rather than widening the page.
 
 ## Tests
 
@@ -187,6 +201,7 @@ A behaviour is proved once, in the layer that owns it.
 | Pure functions (schema, error mapping) | Each rule's boundaries, as plain functions                                                       |
 | Mock store and handlers                | The state machine under each configuration, since every screen test relies on it                 |
 | Screens, through Testing Library + MSW | What a user does: filter the list, walk the form and its errors, run a transition, save settings |
+| Accessibility, through axe             | Every page and form step against WCAG 2.1 AA                                                     |
 
 No end-to-end suite: the screen tests run against the same handlers the browser uses. `pnpm test:coverage` writes `coverage/` over all of `src/` except generated files, the entry point and test helpers; the mock counts, since its rules are code the screens depend on. `vite.config.ts` fails the run under 80 %.
 
