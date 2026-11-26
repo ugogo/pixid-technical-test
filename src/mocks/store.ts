@@ -62,7 +62,7 @@ const SORT_FIELDS = ['createdAt', 'updatedAt', 'title', 'publishedAt'] as const;
 
 /** Sorts on the stored offer; an unpublished offer sorts last either way, ties by id. */
 function compareOffers(sort: JobOfferSort) {
-  const field = SORT_FIELDS.find((candidate) => sort.endsWith(candidate)) ?? 'createdAt';
+  const field = SORT_FIELDS.find((sortField) => sort.endsWith(sortField)) ?? 'createdAt';
   const direction = sort.startsWith('-') ? -1 : 1;
 
   return (a: StoredJobOffer, b: StoredJobOffer) => {
@@ -83,10 +83,24 @@ function compareOffers(sort: JobOfferSort) {
   };
 }
 
+/**
+ * Whether a request body, merged over the offer it updates, has an offer's content. Only the top
+ * level is checked: validateJobOfferRequest has already checked every field against the swagger.
+ */
+function hasContent(merged: Record<string, unknown>): merged is JobOfferContent {
+  return (
+    typeof merged.title === 'string' &&
+    typeof merged.location === 'object' &&
+    merged.location !== null
+  );
+}
+
 /** Keeps only the fields the API defines; a company address carries no address of its own. */
 function toContent(body: Record<string, unknown>, current?: JobOfferContent): JobOfferContent {
-  // The body passed validateJobOfferRequest, and a create carries a title and a location.
-  const merged = { ...current, ...body } as JobOfferContent;
+  const merged = { ...current, ...body };
+
+  if (!hasContent(merged)) throw badRequest('A job offer needs a title and a location');
+
   const location =
     merged.location.type === 'CUSTOM' ? merged.location : { type: merged.location.type };
 
@@ -129,7 +143,7 @@ export function createMockStore({
     return { approvalRequired, partialSaveEnabled, manualPostingRequired };
   }
 
-  function find(companyId: string, jobOfferId: string): StoredJobOffer {
+  function findJobOffer(companyId: string, jobOfferId: string): StoredJobOffer {
     const offer = offers.get(jobOfferId);
 
     if (!offer || offer.companyId !== companyId) throw notFound(jobOfferId);
@@ -185,8 +199,15 @@ export function createMockStore({
         .filter(
           (offer) => !query.locationCity || includesIgnoringCase(cityOf(offer), query.locationCity),
         )
-        .filter((offer) => !query.createdAfter || offer.createdAt >= query.createdAfter)
-        .filter((offer) => !query.createdBefore || offer.createdAt < query.createdBefore)
+        // Compared as instants: as text, a date past year 9999 (`+010000-…`) sorts before every other.
+        .filter(
+          (offer) =>
+            !query.createdAfter || Date.parse(offer.createdAt) >= Date.parse(query.createdAfter),
+        )
+        .filter(
+          (offer) =>
+            !query.createdBefore || Date.parse(offer.createdAt) < Date.parse(query.createdBefore),
+        )
         .toSorted(compareOffers(query.sort));
       const start = query.page * query.size;
 
@@ -208,7 +229,7 @@ export function createMockStore({
     },
 
     getJobOffer(companyId: string, jobOfferId: string): JobOffer {
-      return toJobOffer(find(companyId, jobOfferId));
+      return toJobOffer(findJobOffer(companyId, jobOfferId));
     },
 
     /**
@@ -249,7 +270,7 @@ export function createMockStore({
 
     /** Replaces the fields the body carries; the status does not change. */
     updateJobOffer(companyId: string, jobOfferId: string, body: Record<string, unknown>): JobOffer {
-      const offer = find(companyId, jobOfferId);
+      const offer = findJobOffer(companyId, jobOfferId);
 
       if (!EDITABLE_STATUSES.includes(offer.status)) {
         throw invalidState(offer, 'update', EDITABLE_STATUSES);
@@ -273,7 +294,7 @@ export function createMockStore({
     },
 
     deleteJobOffer(companyId: string, jobOfferId: string) {
-      const offer = find(companyId, jobOfferId);
+      const offer = findJobOffer(companyId, jobOfferId);
 
       if (offer.status !== 'DRAFT') throw invalidState(offer, 'delete', ['DRAFT']);
 
@@ -281,7 +302,7 @@ export function createMockStore({
     },
 
     getTransitions(companyId: string, jobOfferId: string): Schemas['AvailableTransitions'] {
-      const offer = find(companyId, jobOfferId);
+      const offer = findJobOffer(companyId, jobOfferId);
 
       return { currentStatus: offer.status, transitions: transitionsOf(offer) };
     },
@@ -293,13 +314,13 @@ export function createMockStore({
       body: Record<string, unknown>,
       performedBy = CURRENT_USER,
     ): JobOffer {
-      const offer = find(companyId, jobOfferId);
+      const offer = findJobOffer(companyId, jobOfferId);
 
       if (!isOneOf(TRANSITION_ACTIONS, action))
         throw badRequest(`Unknown transition action: '${action}'`);
 
       const transitions = transitionsOf(offer);
-      const transition = transitions.find((candidate) => candidate.action === action);
+      const transition = transitions.find((offered) => offered.action === action);
 
       if (!transition) {
         throw new ApiError(400, {
@@ -308,7 +329,7 @@ export function createMockStore({
           details: {
             currentStatus: offer.status,
             requestedAction: action,
-            validActions: transitions.map((candidate) => candidate.action),
+            validActions: transitions.map((offered) => offered.action),
           },
         });
       }
@@ -378,7 +399,7 @@ export function createMockStore({
     },
 
     getHistory(companyId: string, jobOfferId: string): TransitionHistoryEntry[] {
-      return structuredClone(find(companyId, jobOfferId).history);
+      return structuredClone(findJobOffer(companyId, jobOfferId).history);
     },
 
     getConfiguration,

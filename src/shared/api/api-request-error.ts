@@ -33,7 +33,7 @@ export function errorMessageKey(
   error: unknown,
 ): `errors.${(typeof KNOWN_ERROR_CODES)[number]}` | 'errors.generic' {
   const code = error instanceof ApiRequestError ? error.code : undefined;
-  const knownCode = KNOWN_ERROR_CODES.find((candidate) => candidate === code);
+  const knownCode = KNOWN_ERROR_CODES.find((knownErrorCode) => knownErrorCode === code);
 
   return knownCode ? `errors.${knownCode}` : 'errors.generic';
 }

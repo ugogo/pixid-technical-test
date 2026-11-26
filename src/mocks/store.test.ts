@@ -27,9 +27,9 @@ function storeWith(flags: Partial<WorkflowConfiguration> = {}) {
   return store;
 }
 
-function refusal(run: () => unknown): ApiError {
+function refusal(refusedStoreCall: () => unknown): ApiError {
   try {
-    run();
+    refusedStoreCall();
   } catch (error) {
     if (error instanceof ApiError) return error;
 

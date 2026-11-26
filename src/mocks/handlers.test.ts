@@ -7,22 +7,22 @@ import { OTHER_COMPANY_ID } from './seed';
 
 describe('mocked API', () => {
   test('the seed covers every status for the current company', async () => {
-    const { data } = await apiClient.GET('/job-offers', {
+    const { data: jobOfferPage } = await apiClient.GET('/job-offers', {
       params: { query: { size: 100 } },
     });
 
-    expect(data?.totalElements).toBe(30);
-    expect(new Set(data?.content.map((offer) => offer.status))).toEqual(
+    expect(jobOfferPage?.totalElements).toBe(30);
+    expect(new Set(jobOfferPage?.content.map((offer) => offer.status))).toEqual(
       new Set(JOB_OFFER_STATUSES),
     );
   });
 
   test('every seeded offer agrees with its history', async () => {
-    const { data } = await apiClient.GET('/job-offers', {
+    const { data: jobOfferPage } = await apiClient.GET('/job-offers', {
       params: { query: { size: 100 } },
     });
 
-    const offers = data?.content ?? [];
+    const offers = jobOfferPage?.content ?? [];
     const histories = await Promise.all(
       offers.map((offer) =>
         apiClient.GET('/job-offers/{jobOfferId}/history', {
@@ -40,14 +40,14 @@ describe('mocked API', () => {
   });
 
   test('filters by several statuses', async () => {
-    const { data } = await apiClient.GET('/job-offers', {
+    const { data: jobOfferPage } = await apiClient.GET('/job-offers', {
       params: { query: { status: ['TO_APPROVE', 'TO_POST'], size: 100 } },
     });
 
-    expect(data?.content.every((offer) => ['TO_APPROVE', 'TO_POST'].includes(offer.status))).toBe(
-      true,
-    );
-    expect(data?.totalElements).toBe(7);
+    expect(
+      jobOfferPage?.content.every((offer) => ['TO_APPROVE', 'TO_POST'].includes(offer.status)),
+    ).toBe(true);
+    expect(jobOfferPage?.totalElements).toBe(7);
   });
 
   test('an invalid query parameter is refused', async () => {
@@ -66,13 +66,13 @@ describe('mocked API', () => {
   });
 
   test('create answers 201 with the offer location', async () => {
-    const { data, response } = await apiClient.POST('/job-offers', {
+    const { data: createdOffer, response } = await apiClient.POST('/job-offers', {
       body: { title: 'Cariste (H/F)', location: { type: 'COMPANY_ADDRESS' } },
     });
 
     expect(response.status).toBe(201);
-    expect(data?.status).toBe('TO_FINALIZE');
-    expect(response.headers.get('Location')).toBe(`${API_BASE_URL}/job-offers/${data?.id}`);
+    expect(createdOffer?.status).toBe('TO_FINALIZE');
+    expect(response.headers.get('Location')).toBe(`${API_BASE_URL}/job-offers/${createdOffer?.id}`);
   });
 
   test('a transition with an empty body is accepted', async () => {
@@ -83,17 +83,22 @@ describe('mocked API', () => {
         compensation: { salaryEntries: [{ type: 'HOURLY', amount: 12.5, currency: 'EUR' }] },
       },
     });
-    const { data } = await apiClient.POST('/job-offers/{jobOfferId}/transitions/{action}', {
-      params: { path: { jobOfferId: created?.id ?? '', action: 'submit' } },
-    });
+    const { data: transitionedOffer } = await apiClient.POST(
+      '/job-offers/{jobOfferId}/transitions/{action}',
+      {
+        params: { path: { jobOfferId: created?.id ?? '', action: 'submit' } },
+      },
+    );
 
-    expect(data?.status).toBe('TO_APPROVE');
+    expect(transitionedOffer?.status).toBe('TO_APPROVE');
   });
 
   test('the store is reset between tests', async () => {
-    const { data } = await apiClient.GET('/job-offers', { params: { query: { size: 1 } } });
+    const { data: jobOfferPage } = await apiClient.GET('/job-offers', {
+      params: { query: { size: 1 } },
+    });
 
-    expect(data?.totalElements).toBe(30);
+    expect(jobOfferPage?.totalElements).toBe(30);
   });
 
   test("another company's configuration is forbidden", async () => {

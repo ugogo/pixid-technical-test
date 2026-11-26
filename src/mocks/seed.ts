@@ -306,10 +306,9 @@ export function createSeededStore(): MockStore {
   let idCount = 0;
   const store = createMockStore({
     now: () => (isSeeding ? new Date(seedTime) : new Date()),
-    createId: () =>
-      isSeeding
-        ? `00000000-0000-4000-8000-${String(++idCount).padStart(12, '0')}`
-        : crypto.randomUUID(),
+    // Counted, not random: `crypto.randomUUID` only exists on https or localhost, and the app may be
+    // opened from another device on the local network.
+    createId: () => `00000000-0000-4000-8000-${String(++idCount).padStart(12, '0')}`,
   });
 
   for (const { companyId = CURRENT_COMPANY_ID, workflow, steps = [], ...content } of SEED_OFFERS) {
