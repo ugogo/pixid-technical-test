@@ -17,19 +17,23 @@ export function useCreateJobOffer() {
   });
 }
 
-/** Saves an offer's fields; its transitions are refetched, since completeness changes them. */
+/**
+ * Saves an offer's fields. Its transitions depend on its completeness, so the cached ones are
+ * dropped: the detail loads them again instead of showing the old ones first. A refusal (a 409)
+ * means the offer changed elsewhere, so its detail is refetched.
+ */
 export function useUpdateJobOffer() {
   const queryClient = useQueryClient();
 
   return $api.useMutation('put', '/job-offers/{jobOfferId}', {
     onSuccess: (offer) => {
       queryClient.setQueryData(jobOfferQueries.detail(offer.id).queryKey, offer);
+      queryClient.removeQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey });
 
-      return Promise.all([
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.transitions(offer.id).queryKey }),
-        queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() }),
-      ]);
+      return queryClient.invalidateQueries({ queryKey: jobOfferQueries.lists() });
     },
+    onError: (_error, { params: { path } }) =>
+      queryClient.invalidateQueries({ queryKey: jobOfferQueries.detail(path.jobOfferId).queryKey }),
   });
 }
 

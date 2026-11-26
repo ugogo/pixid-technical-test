@@ -21,13 +21,25 @@ export function useFormErrorText() {
 type FormTextFieldProps = Omit<
   TextFieldProps,
   'name' | 'value' | 'onChange' | 'onBlur' | 'error' | 'helperText' | 'inputRef'
-> & { name: JobOfferFormField };
+> & {
+  name: JobOfferFormField;
+  /** Shows the count of typed characters against this limit, under the field. */
+  characterLimit?: number;
+};
 
 /** A MUI text field bound to one field of the job offer form, showing its error under it. */
-export function FormTextField({ name, ...textFieldProps }: FormTextFieldProps) {
+export function FormTextField({ name, characterLimit, ...textFieldProps }: FormTextFieldProps) {
+  const { t } = useTranslation();
   const { field, fieldState } = useController<JobOfferFormValues>({ name });
   const formErrorText = useFormErrorText();
   const { ref, ...fieldProps } = field;
+  const characterCount =
+    characterLimit === undefined
+      ? undefined
+      : t('job-offer-form.character-count', {
+          count: typeof field.value === 'string' ? field.value.length : 0,
+          limit: characterLimit,
+        });
 
   return (
     <TextField
@@ -35,7 +47,7 @@ export function FormTextField({ name, ...textFieldProps }: FormTextFieldProps) {
       {...textFieldProps}
       {...fieldProps}
       error={fieldState.error !== undefined}
-      helperText={formErrorText(fieldState.error?.message)}
+      helperText={formErrorText(fieldState.error?.message) ?? characterCount}
       inputRef={ref}
     />
   );

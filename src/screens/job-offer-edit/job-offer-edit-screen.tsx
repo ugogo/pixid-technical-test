@@ -32,8 +32,8 @@ export function JobOfferEditScreen() {
             canSaveEarly
             key={offer.id}
             offer={offer}
-            onSave={(body) =>
-              updateJobOffer.mutateAsync({ params: { path: { jobOfferId } }, body })
+            onSave={(body, callbacks) =>
+              updateJobOffer.mutate({ params: { path: { jobOfferId } }, body }, callbacks)
             }
           />
         </>

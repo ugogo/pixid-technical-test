@@ -23,7 +23,7 @@ export function JobOfferNewScreen() {
       {configuration ? (
         <JobOfferForm
           canSaveEarly={configuration.partialSaveEnabled}
-          onSave={(body) => createJobOffer.mutateAsync({ body })}
+          onSave={(body, callbacks) => createJobOffer.mutate({ body }, callbacks)}
         />
       ) : (
         <Skeleton height={360} variant="rounded" />

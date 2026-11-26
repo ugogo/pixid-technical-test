@@ -8,7 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { ApiRequestError } from '@/shared/api/api-request-error';
 import { isOneOf } from '@/shared/is-one-of';
 import { ConfirmDialog } from '@/shared/ui/confirm-dialog';
-import { RouterLink } from '@/shared/ui/router-link';
+import { RouterButton, RouterLink } from '@/shared/ui/router-link';
 
 import { JobOfferDetails } from '../job-offer-details';
 import type { JobOffer } from '../job-offer-types';
@@ -51,7 +51,13 @@ type SaveMode = 'draft' | 'complete';
  * What the form is doing, or how its last save ended. A conflict (a 409) ends it: the offer can no
  * longer be edited.
  */
-type FormPhase = 'editing' | 'checkingStep' | 'saving' | 'saveFailed' | 'conflict';
+type FormPhase =
+  | 'editing'
+  | 'checkingStep'
+  | 'checkingSave'
+  | 'sending'
+  | 'saveFailed'
+  | 'conflict';
 
 /** Why a save failed, as the form reads the server's answer. */
 type SaveFailure =
@@ -74,7 +80,7 @@ const STEP_FIELDS = {
 /** The step that shows a server field, found by its top-level field; the first step otherwise. */
 function stepOfServerField(serverField: string): JobOfferFormStep {
   const [topLevelField] = serverField.split(/[.[]/, 1);
-  const step = STEPS.find((candidate) => isOneOf(STEP_FIELDS[candidate], topLevelField));
+  const step = STEPS.find((fieldStep) => isOneOf(STEP_FIELDS[fieldStep], topLevelField));
 
   return step ?? 'basicInfo';
 }
@@ -108,31 +114,43 @@ function applySaveError(
   return { type: 'invalid', step: firstStepWithErrors ?? 'basicInfo' };
 }
 
+/** What the form does once the request is answered. */
+export interface JobOfferSaveCallbacks {
+  onSuccess: (saved: JobOffer) => void;
+  onError: (error: unknown) => void;
+}
+
 interface JobOfferFormProps {
   /** The offer to edit; without one, the form creates an offer. */
   offer?: JobOffer;
   /** Whether the offer can be saved before its compensation is filled in. */
   canSaveEarly: boolean;
-  /** Sends the request and resolves with the saved offer. */
-  onSave: (request: JobOfferRequest) => Promise<JobOffer>;
+  /**
+   * Sends the request through the page's mutation, with `callbacks` as `mutate`'s own: TanStack
+   * Query skips them once the page has unmounted, so a user who left during the save stays there.
+   */
+  onSave: (request: JobOfferRequest, callbacks: JobOfferSaveCallbacks) => void;
 }
 
 /** Creates or edits an offer in three steps, then opens it. */
 export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps) {
   const { t } = useTranslation();
   const formErrorText = useFormErrorText();
+  const navigate = useNavigate();
+  const [shownStep, setShownStep] = useState<JobOfferFormScreenStep>('basicInfo');
+  const [phase, setPhase] = useState<FormPhase>('editing');
+  const isSaving = phase === 'checkingSave' || phase === 'sending';
+  const isBusy = phase === 'checkingStep' || isSaving || phase === 'conflict';
   const jobOfferForm = useForm<JobOfferFormValues, unknown, JobOfferFormOutput>({
     defaultValues: toJobOfferFormValues(offer),
+    // Every field is locked while the request runs, since a change then would not be the one sent,
+    // and once a conflict ends the form.
+    disabled: phase === 'sending' || phase === 'conflict',
     // Not `onTouched`: it validates a whole salary or bonus list when a row is added, new row included.
     mode: 'onBlur',
     resolver: zodResolver(jobOfferFormSchema),
   });
   const { clearErrors, formState, getValues, setError, trigger } = jobOfferForm;
-
-  const navigate = useNavigate();
-  const [shownStep, setShownStep] = useState<JobOfferFormScreenStep>('basicInfo');
-  const [phase, setPhase] = useState<FormPhase>('editing');
-  const isBusy = phase === 'checkingStep' || phase === 'saving' || phase === 'conflict';
 
   /**
    * Checks a step's fields. Leaving the compensation step also needs a salary or a bonus, unless
@@ -146,7 +164,10 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
     if (!areFieldsValid) return false;
     if (step === 'basicInfo' || mode === 'draft' || hasCompensation(getValues())) return true;
 
-    setError('root.compensation', { type: 'required', message: 'compensation-required' });
+    setError('root.compensation', {
+      type: 'required',
+      message: canSaveEarly ? 'compensation-required-or-save-early' : 'compensation-required',
+    });
     return false;
   }
 
@@ -172,8 +193,8 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
     if (isValid) setShownStep(NEXT_STEP[step]);
   }
 
-  async function save(mode: SaveMode) {
-    setPhase('saving');
+  async function saveJobOffer(mode: SaveMode) {
+    setPhase('checkingSave');
 
     const invalidStep = await firstInvalidStep(mode);
 
@@ -184,27 +205,30 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
     }
 
     const request = toJobOfferRequest(jobOfferFormSchema.parse(getValues()));
-    const saved = await onSave(request).catch((error: unknown) => {
-      const failure = applySaveError(error, jobOfferForm);
 
-      if (failure.type === 'invalid') setShownStep(failure.step);
-      setPhase(PHASE_AFTER_SAVE_FAILURE[failure.type]);
-    });
+    setPhase('sending');
+    onSave(request, {
+      // The saved form is still dirty: opening the saved offer skips the leave prompt. A new offer's
+      // form leaves the history, so Back goes to the list; an edit stays, as the detail before it does.
+      onSuccess: (saved) =>
+        void navigate({
+          to: '/job-offers/$jobOfferId',
+          params: { jobOfferId: saved.id },
+          replace: offer === undefined,
+          ignoreBlocker: true,
+        }),
+      onError: (error) => {
+        const failure = applySaveError(error, jobOfferForm);
 
-    if (!saved) return;
-
-    // The saved form is still dirty: opening the saved offer skips the leave prompt.
-    await navigate({
-      to: '/job-offers/$jobOfferId',
-      params: { jobOfferId: saved.id },
-      replace: true,
-      ignoreBlocker: true,
+        if (failure.type === 'invalid') setShownStep(failure.step);
+        setPhase(PHASE_AFTER_SAVE_FAILURE[failure.type]);
+      },
     });
   }
 
   // Read during render: react-hook-form tracks `isDirty` only once something reads it.
   const leaveBlocker = useBlocker({
-    shouldBlockFn: blockLeaving,
+    shouldBlockFn: () => true,
     disabled: !formState.isDirty,
     withResolver: true,
   });
@@ -225,13 +249,19 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          if (shownStep === 'review') void save('complete');
+          if (shownStep === 'review') void saveJobOffer('complete');
           else void goPastStep(shownStep);
         }}
         sx={{ p: 3 }}
         variant="outlined"
       >
         <Stack spacing={3}>
+          <Typography color="text.secondary" variant="body2">
+            {t('job-offer-form.step-count', {
+              number: SCREEN_STEPS.indexOf(shownStep) + 1,
+              count: SCREEN_STEPS.length,
+            })}
+          </Typography>
           <Stepper activeStep={SCREEN_STEPS.indexOf(shownStep)} alternativeLabel>
             {SCREEN_STEPS.map((step) => (
               <Step key={step}>
@@ -261,6 +291,20 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
           {shownStep === 'compensation' && <CompensationStep />}
           {shownStep === 'review' && <JobOfferReview values={getValues()} />}
           <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {shownStep === 'basicInfo' &&
+              (offer ? (
+                <RouterButton
+                  disabled={isBusy}
+                  params={{ jobOfferId: offer.id }}
+                  to="/job-offers/$jobOfferId"
+                >
+                  {t('app.cancel')}
+                </RouterButton>
+              ) : (
+                <RouterButton disabled={isBusy} to="/job-offers">
+                  {t('app.cancel')}
+                </RouterButton>
+              ))}
             {shownStep !== 'basicInfo' && (
               <Button disabled={isBusy} onClick={() => setShownStep(PREVIOUS_STEP[shownStep])}>
                 {t('job-offer-form.back')}
@@ -269,8 +313,8 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
             {canSaveEarly && shownStep !== 'review' && (
               <Button
                 disabled={isBusy}
-                loading={phase === 'saving'}
-                onClick={() => void save('draft')}
+                loading={isSaving}
+                onClick={() => void saveJobOffer('draft')}
                 variant="outlined"
               >
                 {t('job-offer-form.save-early')}
@@ -278,7 +322,7 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
             )}
             <Button
               disabled={isBusy}
-              loading={shownStep === 'review' && phase === 'saving'}
+              loading={shownStep === 'review' && isSaving}
               type="submit"
               variant="contained"
             >
@@ -289,6 +333,8 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
       </Paper>
       <ConfirmDialog
         confirmLabel={t('job-offer-form.leave.confirm')}
+        // While a save runs, leaving would not lose the changes: the user waits for it instead.
+        isPending={isSaving}
         message={t('job-offer-form.leave.body')}
         onClose={() => leaveBlocker.reset?.()}
         onConfirm={() => leaveBlocker.proceed?.()}
@@ -297,11 +343,6 @@ export function JobOfferForm({ offer, canSaveEarly, onSave }: JobOfferFormProps)
       />
     </FormProvider>
   );
-}
-
-/** Any navigation away from a dirty form asks first; the blocker is off while the form is clean. */
-function blockLeaving() {
-  return true;
 }
 
 /** The offer as it will be saved: its title, then the same blocks as its detail page. */

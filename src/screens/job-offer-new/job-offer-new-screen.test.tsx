@@ -63,6 +63,22 @@ describe('JobOfferNewScreen', () => {
     expect(screen.getByText('Draft')).toBeInTheDocument();
   });
 
+  test("counts the title's characters against its limit", async () => {
+    const { user } = await renderNewOffer();
+
+    expect(screen.getByText('0/200 characters')).toBeInTheDocument();
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger');
+    expect(screen.getByText('9/200 characters')).toBeInTheDocument();
+  });
+
+  test('cancels back to the list', async () => {
+    const { user, router } = await renderNewOffer();
+
+    await user.click(screen.getByRole('link', { name: 'Cancel' }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/job-offers'));
+  });
+
   test('stays on a step until its fields are valid', async () => {
     const { user } = await renderNewOffer();
 
@@ -101,9 +117,42 @@ describe('JobOfferNewScreen', () => {
         }),
       ),
     );
-    await renderNewOffer();
+    const { user } = await renderNewOffer();
 
     expect(screen.queryByRole('button', { name: 'Save and finish later' })).not.toBeInTheDocument();
+
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(await screen.findByRole('button', { name: 'Next' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Add a salary or a bonus.');
+  });
+
+  test('locks the form while saving, and a save that lands after the user left keeps them there', async () => {
+    const { user, router } = await renderNewOffer();
+    let releaseCreation: (() => void) | undefined;
+
+    // Holds the creation, then lets the mock's own handler answer it.
+    server.use(
+      http.post(
+        `${API_BASE_URL}/job-offers`,
+        () =>
+          new Promise<undefined>((resolve) => {
+            releaseCreation = () => resolve(undefined);
+          }),
+      ),
+    );
+    await user.type(screen.getByRole('textbox', { name: 'Title' }), 'Boulanger (H/F)');
+    await user.click(screen.getByRole('button', { name: 'Save and finish later' }));
+
+    expect(screen.getByRole('textbox', { name: 'Title' })).toBeDisabled();
+    expect(screen.getByRole('link', { name: 'Cancel' })).toHaveAttribute('aria-disabled', 'true');
+
+    await router.navigate({ to: '/settings', ignoreBlocker: true });
+    releaseCreation?.();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(router.state.location.pathname).toBe('/settings');
   });
 
   test("shows the server's field error on its field, on its step", async () => {
