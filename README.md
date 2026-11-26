@@ -39,6 +39,11 @@ pnpm test:coverage
 
 The first runs the whole suite once. The second also writes an HTML report to `coverage/index.html`, and fails under 80 % coverage. The `coverage/` folder in the repository is that report.
 
+**CI** (`.github/workflows/ci.yml`) runs on every pull request and on `main`, in two jobs:
+
+- **Tests**: type-check, then the whole suite with the 80 % coverage gate.
+- **Accessibility**: lint, `jsx-a11y` rules included, then the axe checks.
+
 The tests render each page as a user reaches it, against the same mock API as the browser. Each page, form step and dialog is also checked against WCAG 2.1 AA with axe.
 
 ## Other scripts
@@ -79,7 +84,7 @@ Each one is explained in [ARCHITECTURE.md](ARCHITECTURE.md).
 - The mock API always runs, including in `pnpm build`; pointing the app at a real API means removing it from `src/main.tsx` and setting the base URL.
 - One company, hard-coded, stands in for the signed-in user's session.
 - The server's validation messages show in English, as the API words them.
-- No end-to-end tests or CI, both out of the brief's scope.
+- No end-to-end tests: the page tests run against the mock API, as the browser does.
 
 ## Project layout
 

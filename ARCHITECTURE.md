@@ -263,5 +263,6 @@ There is no end-to-end suite: the page tests run against the same handlers as th
 - **One company**, hard-coded. With a real session, the company id would come from it, and switching company would clear the query cache.
 - **Server messages are in English**, as the API words them.
 - **No virtual scrolling**: the API paginates the list, at most 100 rows a page.
-- **No end-to-end tests or CI**, both out of the brief's scope. The first to add: a Playwright run against a real backend, and a CI job running `typecheck`, `lint`, `format:check` and `test:coverage`.
+- **No end-to-end tests**, out of the brief's scope. The first to add: a Playwright run against a real backend.
+- **CI** (`.github/workflows/ci.yml`) runs the tests (type-check, then the suite with its coverage gate) and the accessibility checks (lint with `jsx-a11y`, then axe) on every pull request. `format:check` and a build would be the next steps to add.
 - **With more languages**, the translation files would split by feature.
