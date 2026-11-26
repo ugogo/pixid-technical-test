@@ -1,6 +1,7 @@
 import { TextField, type TextFieldProps } from '@mui/material';
-// oxlint-disable-next-line no-restricted-imports -- a timer is an outside system: an effect's job
-import { useEffect, useEffectEvent, useState } from 'react';
+import { useState } from 'react';
+
+import { useDebounce } from '@/shared/use-debounce';
 
 const DEBOUNCE_DELAY = 300;
 
@@ -29,17 +30,9 @@ export function DebouncedTextField({ value, onChange, onBlur, ...props }: Deboun
     if (typed !== value) onChange(typed);
   }
 
-  const reportSettledDraft = useEffectEvent(report);
-
   // Reports the draft once it stops changing. Dropping the draft (a report, a reset, leaving the
-  // field) or unmounting clears the pending report.
-  useEffect(() => {
-    if (draft === undefined) return;
-
-    const pendingReport = setTimeout(() => reportSettledDraft(draft), DEBOUNCE_DELAY);
-
-    return () => clearTimeout(pendingReport);
-  }, [draft]);
+  // field) cancels the pending report.
+  useDebounce(draft, DEBOUNCE_DELAY, report);
 
   return (
     <TextField
