@@ -76,7 +76,8 @@ src/
 │   ├── api/                API client, generated types, enum values, API errors, the current company
 │   ├── ui/                 small pieces over MUI: router links and buttons, a section, dialogs, a debounced field
 │   ├── i18n/               setup, language switch, formatters, `en.json`, `fr.json`
-│   └── is-one-of.ts        narrows a value to one of a list
+│   ├── is-one-of.ts        narrows a value to one of a list
+│   └── use-debounce.ts     calls back with a value once it stops changing
 ├── mocks/                  the mocked API: handlers, in-memory store, workflow, seed
 └── test/                   test setup and helpers
 ```
@@ -254,7 +255,7 @@ There is no end-to-end suite: the page tests run against the same handlers as th
 - Return early: the empty or failed case first.
 - No `as` type assertions; an awaited value goes into a named `const` before a `return` or an `if` reads it.
 - A form holds its fields, their validation and its flow, and its page passes `onSave`, which runs the page's mutation with the form's callbacks. A button that runs one write (a transition, a delete) holds its own mutation, since nothing else needs its state.
-- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system, such as the debounced field's timer; its import then disables the rule, with the reason.
+- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system: the one left is `useDebounce`'s timer, whose import disables the rule, with the reason.
 
 ## Trade-offs and next steps
 
