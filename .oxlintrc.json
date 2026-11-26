@@ -9,12 +9,25 @@
     "react/react-in-jsx-scope": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
+    "react/no-deriving-state-in-effects": "error",
     "import/no-unassigned-import": "off",
     "import/no-named-as-default-member": "off",
     "vitest/expect-expect": [
       "error",
       {
         "assertFunctionNames": ["expect", "expectAccessible"]
+      }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["default", "useEffect", "useLayoutEffect"],
+            "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+          }
+        ]
       }
     ]
   },
@@ -24,5 +37,134 @@
     "public",
     "src/routeTree.gen.ts",
     "src/shared/api/schema.ts"
+  ],
+  "overrides": [
+    {
+      "files": ["src/shared/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["default", "useEffect", "useLayoutEffect"],
+                "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/app/**",
+                  "**/routes/**",
+                  "**/screens/**",
+                  "**/features/**",
+                  "**/mocks/**"
+                ],
+                "message": "shared/ is the bottom layer: it imports nothing above it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/features/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["default", "useEffect", "useLayoutEffect"],
+                "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": [
+                  "**/app/**",
+                  "**/routes/**",
+                  "**/screens/**",
+                  "**/mocks/**",
+                  "@/features/**"
+                ],
+                "message": "A feature builds on shared/ only: no screen, shell, mock or other feature."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/screens/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["default", "useEffect", "useLayoutEffect"],
+                "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/app/**", "**/routes/**", "**/mocks/**", "@/features/*/**"],
+                "message": "A screen imports a feature through its index.ts, and no shell or mock."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/screens/**/*.test.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["default", "useEffect", "useLayoutEffect"],
+                "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/app/**", "**/routes/**", "@/features/*/**"],
+                "message": "A screen test renders the app against the mock, and imports a feature through its index.ts."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/app/**", "src/routes/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "react",
+                "importNames": ["default", "useEffect", "useLayoutEffect"],
+                "message": "No useEffect by default: derive while rendering, act in the event handler, or use the router or TanStack Query (ARCHITECTURE.md, Conventions). For an outside system, such as a timer, disable this rule on the import, with the reason. The default import is refused so React.useEffect cannot get around it."
+              }
+            ],
+            "patterns": [
+              {
+                "group": ["**/mocks/**"],
+                "message": "Only main.tsx and the tests load the mocked API."
+              }
+            ]
+          }
+        ]
+      }
+    }
   ]
 }

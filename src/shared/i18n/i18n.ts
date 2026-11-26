@@ -37,7 +37,9 @@ await i18n.use(initReactI18next).init({
   fallbackLng: FALLBACK_LANGUAGE,
   interpolation: { escapeValue: false },
   lng: initialLanguage(),
-  resources: { en: { translation: en }, fr: { translation: fr } },
+  // `satisfies`: a key missing from the French file fails the type check instead of showing
+  // English. `translations.test.ts` catches the rest: extra keys, and lost placeholders.
+  resources: { en: { translation: en }, fr: { translation: fr satisfies typeof en } },
 });
 
 export { i18n };
