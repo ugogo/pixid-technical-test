@@ -1,4 +1,4 @@
-import { Alert, Button } from '@mui/material';
+import { Button } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -24,22 +24,21 @@ export function DeleteJobOfferButton({ jobOfferId }: { jobOfferId: string }) {
         confirmLabel={t('job-offer.delete.button')}
         isPending={deleteJobOffer.isPending}
         message={t('job-offer.delete.body')}
-        onClose={() => setIsConfirming(false)}
+        onClose={() => {
+          setIsConfirming(false);
+          deleteJobOffer.reset();
+        }}
         onConfirm={() =>
           deleteJobOffer.mutate(
             { params: { path: { jobOfferId } } },
-            { onSuccess: () => void navigate({ to: '/job-offers' }) },
+            // Replaced, so Back does not lead to the deleted offer.
+            { onSuccess: () => void navigate({ to: '/job-offers', replace: true }) },
           )
         }
         open={isConfirming}
+        error={deleteJobOffer.error && t(errorMessageKey(deleteJobOffer.error))}
         title={t('job-offer.delete.title')}
-      >
-        {deleteJobOffer.error && (
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {t(errorMessageKey(deleteJobOffer.error))}
-          </Alert>
-        )}
-      </ConfirmDialog>
+      />
     </>
   );
 }
