@@ -27,6 +27,13 @@ jobs:
       # The whole suite, with the 80 % coverage gate from vite.config.ts.
       - name: Test with coverage
         run: pnpm test:coverage
+      # The report of this exact commit, downloadable from the run's summary page.
+      - name: Upload the coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
 
   accessibility:
     name: Accessibility

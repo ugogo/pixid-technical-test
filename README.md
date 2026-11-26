@@ -37,11 +37,13 @@ pnpm test
 pnpm test:coverage
 ```
 
-The first runs the whole suite once. The second also writes an HTML report to `coverage/index.html`, and fails under 80 % coverage. The `coverage/` folder in the repository is that report.
+The first runs the whole suite once. The second also writes an HTML report to `coverage/index.html`, and fails under 80 % coverage.
+
+The `coverage/` folder in the repository is a snapshot of that report, taken at submission because the brief asks for it; `pnpm test:coverage` regenerates it. For the report of the latest code, each CI run uploads its own: open the run in the repository's Actions tab and download the `coverage` artifact.
 
 **CI** (`.github/workflows/ci.yml`) runs on every pull request and on `main`, in two jobs:
 
-- **Tests**: type-check, then the whole suite with the 80 % coverage gate.
+- **Tests**: type-check, then the whole suite with the 80 % coverage gate, uploading the report.
 - **Accessibility**: lint, `jsx-a11y` rules included, then the axe checks.
 
 The tests render each page as a user reaches it, against the same mock API as the browser. Each page, form step and dialog is also checked against WCAG 2.1 AA with axe.
