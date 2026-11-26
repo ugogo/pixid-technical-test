@@ -1,14 +1,23 @@
-import { useEffect, useState } from 'react';
+// oxlint-disable-next-line no-restricted-imports -- a timer is an outside system: an effect's job
+import { useEffect, useEffectEvent } from 'react';
 
-/** The value as it was once it stopped changing for `delay` milliseconds. */
-export function useDebounce<Value>(value: Value, delay: number): Value {
-  const [debouncedValue, setDebouncedValue] = useState(value);
+/**
+ * Calls `onSettle` with `value` once it has stopped changing for `delay` milliseconds. Nothing is
+ * pending while `value` is `undefined`: a change to `undefined`, or unmounting, cancels the call.
+ */
+export function useDebounce<Value>(
+  value: Value | undefined,
+  delay: number,
+  onSettle: (value: Value) => void,
+) {
+  // Always the latest `onSettle`, without restarting the timer when it changes.
+  const settle = useEffectEvent(onSettle);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setDebouncedValue(value), delay);
+    if (value === undefined) return;
 
-    return () => clearTimeout(timeout);
+    const pendingCall = setTimeout(() => settle(value), delay);
+
+    return () => clearTimeout(pendingCall);
   }, [value, delay]);
-
-  return debouncedValue;
 }

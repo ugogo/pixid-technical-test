@@ -1,11 +1,12 @@
 import { Stack, Typography } from '@mui/material';
-import { getRouteApi } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
+import { getRouteApi, Navigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import {
   JobOfferFilters,
+  jobOfferQueries,
   JobOfferTable,
-  useJobOffers,
   type JobOfferListSearch,
 } from '@/features/job-offers';
 import { RouterButton } from '@/shared/ui/router-link';
@@ -17,7 +18,9 @@ export function JobOffersScreen() {
   const { t } = useTranslation();
   const search = route.useSearch();
   const navigate = route.useNavigate();
-  const { data, isPlaceholderData } = useJobOffers(search);
+  const { data: jobOfferPage, isPlaceholderData } = useQuery(jobOfferQueries.list(search));
+  const lastPage =
+    jobOfferPage && !isPlaceholderData ? Math.max(jobOfferPage.totalPages - 1, 0) : undefined;
 
   /** A change of filter, sort or size starts again from the first page; a page change says so. */
   function updateSearch(changes: Partial<JobOfferListSearch>) {
@@ -26,6 +29,15 @@ export function JobOffersScreen() {
 
   return (
     <Stack spacing={3}>
+      {/* A page past the last one (an old link, or offers that left the filter) shows the last page. */}
+      {lastPage !== undefined && search.page > lastPage && (
+        <Navigate
+          from="/job-offers/"
+          replace
+          search={(previous) => ({ ...previous, page: lastPage })}
+          to="."
+        />
+      )}
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
         <Typography component="h1" variant="h4">
           {t('job-offers.list.title')}
@@ -42,7 +54,7 @@ export function JobOffersScreen() {
       <JobOfferTable
         isUpdating={isPlaceholderData}
         onChange={updateSearch}
-        page={data}
+        page={jobOfferPage}
         search={search}
       />
     </Stack>
