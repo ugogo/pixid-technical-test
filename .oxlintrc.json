@@ -9,6 +9,7 @@
     "react/react-in-jsx-scope": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
+    "react/no-deriving-state-in-effects": "error",
     "import/no-unassigned-import": "off",
     "import/no-named-as-default-member": "off",
     "vitest/expect-expect": [

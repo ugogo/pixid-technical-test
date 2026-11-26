@@ -255,7 +255,7 @@ There is no end-to-end suite: the page tests run against the same handlers as th
 - Return early: the empty or failed case first.
 - No `as` type assertions; an awaited value goes into a named `const` before a `return` or an `if` reads it.
 - A form holds its fields, their validation and its flow, and its page passes `onSave`, which runs the page's mutation with the form's callbacks. A button that runs one write (a transition, a delete) holds its own mutation, since nothing else needs its state.
-- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system: the one left is `useDebounce`'s timer, whose import disables the rule, with the reason.
+- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system: the one left is `useDebounce`'s timer, whose import disables the rule, with the reason. Where the ban is lifted, oxlint's `react/no-deriving-state-in-effects` and `react/set-state-in-effect` still refuse an effect that only keeps state in step.
 
 ## Trade-offs and next steps
 
