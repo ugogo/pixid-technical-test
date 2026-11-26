@@ -82,18 +82,18 @@ src/
 └── test/                   test setup and helpers
 ```
 
-- **Imports go down**: `screens → features → shared`. A screen imports a feature through its `index.ts` only. `app/` and `routes/` are the shell above them. oxlint enforces this (`no-restricted-imports` in `.oxlintrc.json`).
+- **Imports go down**: `screens → features → shared`. A screen imports a feature through its `index.ts` only, and a feature imports no other feature. `app/` and `routes/` are the shell above them. oxlint enforces this (`no-restricted-imports` in `.oxlintrc.json`), for aliased and relative paths alike. One gap is left: a file at a feature's top level could still reach another feature with `../other-feature/…`.
 - **A screen owns its page**: its layout, its copy, which blocks it shows. It reads data through a feature's query options (`useQuery(jobOfferQueries.detail(id))`) and never builds a request itself.
 - **`shared/` knows no page or feature**: `shared/api` speaks the API's vocabulary (its types, enums and error codes), but nothing in `shared/` is about one screen.
 - **Screen folders are named entity first, verb last** (`job-offer-edit`, `job-offer-new`), so an entity's screens sort together.
-- **The mock** is imported only by `main.tsx` (as its own chunk) and by the tests.
+- **The mock** is imported only by `main.tsx` (as its own chunk) and by the tests; oxlint refuses it everywhere else.
 
 ### Adding to the app
 
 - **A page**: a file in `routes/` (TanStack Router generates the route tree from them), a folder in `screens/`, and the blocks it needs in a feature.
 - **An endpoint**: update the swagger, run `pnpm api:types`, add its query options or mutation hook in the feature's `api/` folder, and its handler and store rule in `mocks/`.
 - **A domain** (say, candidates): a `features/candidates/` folder with its own `index.ts`, and screens named `candidate-*`.
-- **A translation**: the same key in `en.json` and `fr.json`; the type check fails when French misses one.
+- **A translation**: the same key in `en.json` and `fr.json`. The type check fails when French misses one, and `translations.test.ts` when French has an extra one or loses a placeholder.
 
 ## Workflow and transitions
 
@@ -255,7 +255,7 @@ There is no end-to-end suite: the page tests run against the same handlers as th
 - Return early: the empty or failed case first.
 - No `as` type assertions; an awaited value goes into a named `const` before a `return` or an `if` reads it.
 - A form holds its fields, their validation and its flow, and its page passes `onSave`, which runs the page's mutation with the form's callbacks. A button that runs one write (a transition, a delete) holds its own mutation, since nothing else needs its state.
-- No `useEffect` by default: oxlint refuses importing it. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system: the one left is `useDebounce`'s timer, whose import disables the rule, with the reason. Where the ban is lifted, oxlint's `react/no-deriving-state-in-effects` and `react/set-state-in-effect` still refuse an effect that only keeps state in step.
+- No `useEffect` by default: oxlint refuses importing it, and refuses React's default import so `React.useEffect` cannot get around it. Each layer of `.oxlintrc.json` repeats the ban, since an override replaces the base options; `src/test/oxlint-config.test.ts` keeps the copies identical. A value derives while rendering, an action runs in its event handler, a navigation renders `<Navigate>`, and data goes through the router and TanStack Query. An effect only syncs with an outside system: the one left is `useDebounce`'s timer, whose import disables the rule, with the reason. Where the ban is lifted, oxlint's `react/no-deriving-state-in-effects` and `react/set-state-in-effect` still refuse an effect that only keeps state in step.
 
 ## Trade-offs and next steps
 

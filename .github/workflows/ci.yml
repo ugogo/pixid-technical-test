@@ -26,10 +26,12 @@ jobs:
         run: pnpm typecheck
       # The whole suite, with the 80 % coverage gate from vite.config.ts.
       - name: Test with coverage
+        id: tests
         run: pnpm test:coverage
-      # The report of this exact commit, downloadable from the run's summary page.
+      # The report of this exact commit, downloadable from the run's summary page. Skipped when the
+      # tests did not run: the folder would still hold the snapshot committed in the repository.
       - name: Upload the coverage report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.tests.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
         with:
           name: coverage
