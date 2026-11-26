@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the run still going.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Type-check
+        run: pnpm typecheck
+      # The whole suite, with the 80 % coverage gate from vite.config.ts.
+      - name: Test with coverage
+        run: pnpm test:coverage
+
+  accessibility:
+    name: Accessibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # oxlint's jsx-a11y rules, with the rest of the lint config.
+      - name: Lint, jsx-a11y rules included
+        run: pnpm lint
+      # axe's WCAG 2.1 A and AA rules on every page, form step and dialog.
+      - name: axe, WCAG 2.1 AA
+        run: pnpm exec vitest run src/screens/accessibility.test.tsx
